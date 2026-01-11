@@ -14,6 +14,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 type Point = { x: number; y: number; timestamp: number };
 
@@ -27,6 +28,7 @@ export function SpiralTestClient() {
 
   const { appUser } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const drawReferenceSpiral = useCallback((ctx: CanvasRenderingContext2D) => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -98,9 +100,15 @@ export function SpiralTestClient() {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
+    
     const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
     const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
+    
+    // Adjust for canvas scaling if its rendered size is different from its coordinate space size
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
 
   const startDrawing = (event: React.MouseEvent | React.TouchEvent) => {
@@ -119,6 +127,7 @@ export function SpiralTestClient() {
 
   const draw = (event: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing || testState !== 'drawing') return;
+    event.preventDefault(); // Prevent scrolling on touch devices
     const coords = getCanvasCoordinates(event);
     if (!coords) return;
 
@@ -140,13 +149,24 @@ export function SpiralTestClient() {
     if (points.length > 50) {
       setTestState('analyzing');
       const result = await analyzeAndSaveSpiralTest(points);
-      if ('error' in result) {
-          // handle error
-          setTestState('idle');
+      if (result && 'error' in result) {
+          toast({
+            variant: 'destructive',
+            title: 'Analysis Failed',
+            description: result.error,
+          });
+          resetTest();
       } else {
           setAnalysis(result);
           setTestState('results');
       }
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Drawing too short',
+            description: 'Please draw a more complete spiral to get an analysis.',
+        });
+        resetTest();
     }
   };
 
@@ -182,7 +202,7 @@ export function SpiralTestClient() {
     <div className="grid lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
         <Card className="relative">
-          <CardContent className="p-4">
+          <CardContent className="p-2 sm:p-4">
           {(testState === 'countdown' && countdown > 0) && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
                 <div className="text-center">
@@ -195,10 +215,11 @@ export function SpiralTestClient() {
               ref={canvasRef}
               width={600}
               height={600}
-              className="border-2 border-dashed border-border rounded-lg cursor-crosshair w-full aspect-square"
+              className="border-2 border-dashed border-border rounded-lg cursor-crosshair w-full h-auto aspect-square touch-none"
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}
               onTouchStart={startDrawing}
               onTouchMove={draw}
               onTouchEnd={stopDrawing}
