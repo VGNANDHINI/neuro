@@ -40,7 +40,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', href: '/dashboard', icon: Home, label: 'Dashboard', group: 'main' },
-  { id: 'results', href: '/results', icon: FileText, label: 'Results', group: 'main' },
   { id: 'progress', href: '/progress', icon: BarChart3, label: 'Progress', group: 'main' },
   { id: 'spiral-test', href: '/tests/spiral', icon: Activity, label: 'Spiral Test', group: 'tests' },
   { id: 'voice-test', href: '/tests/voice', icon: Mic, label: 'Voice Test', group: 'tests' },
