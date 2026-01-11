@@ -8,37 +8,13 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {
+  AnalyzeSpiralDrawingInputSchema,
+  AnalyzeSpiralDrawingOutputSchema,
+  type AnalyzeSpiralDrawingInput,
+} from '@/lib/types';
 
-const AnalyzeSpiralDrawingInputSchema = z.object({
-  points: z
-    .string()
-    .describe(
-      'A JSON string containing an array of points, each with x, y coordinates, and timestamp.'
-    ),
-});
-export type AnalyzeSpiralDrawingInput = z.infer<typeof AnalyzeSpiralDrawingInputSchema>;
-
-export const AnalyzeSpiralDrawingOutputSchema = z.object({
-  tremorScore: z
-    .number()
-    .describe('A score indicating the level of tremor detected in the drawing (0-100, higher is worse).'),
-  smoothnessScore: z.number().describe('A score indicating the smoothness of the drawing (0-100, higher is better).'),
-  speedScore: z.number().describe('A score indicating the consistency of the drawing speed (0-100, higher is better).'),
-  consistencyScore: z
-    .number()
-    .describe('A score indicating how consistently the spiral expands (0-100, higher is better).'),
-  overallScore: z.number().describe('An overall score indicating the quality of the drawing (0-100, higher is better).'),
-  riskLevel: z
-    .enum(['Low', 'Moderate', 'High'])
-    .describe('The risk level based on the analysis.'),
-  recommendation: z
-    .string()
-    .describe('A recommendation based on the risk level, e.g., consult a neurologist.'),
-});
-export type AnalyzeSpiralDrawingOutput = z.infer<typeof AnalyzeSpiralDrawingOutputSchema>;
-
-export async function analyzeSpiralDrawing(input: AnalyzeSpiralDrawingInput): Promise<AnalyzeSpiralDrawingOutput> {
+export async function analyzeSpiralDrawing(input: AnalyzeSpiralDrawingInput): Promise<any> {
   return analyzeSpiralDrawingFlow(input);
 }
 

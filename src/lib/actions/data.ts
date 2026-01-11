@@ -17,9 +17,10 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { AppUser, TestResult } from '@/lib/types';
-import { analyzeSpiralDrawing, AnalyzeSpiralDrawingOutputSchema } from '@/ai/flows/analyze-spiral-drawing';
-import { analyzeVoiceRecording, AnalyzeVoiceRecordingOutputSchema } from '@/ai/flows/analyze-voice-recording';
-import { analyzeTapping, AnalyzeTappingOutputSchema } from '@/ai/flows/analyze-tapping-patterns';
+import { analyzeSpiralDrawing } from '@/ai/flows/analyze-spiral-drawing';
+import { analyzeVoiceRecording } from '@/ai/flows/analyze-voice-recording';
+import { analyzeTapping } from '@/ai/flows/analyze-tapping-patterns';
+import { AnalyzeSpiralDrawingOutputSchema, AnalyzeTappingOutputSchema, AnalyzeVoiceRecordingOutputSchema } from '@/lib/types';
 
 // USER DATA
 export async function getAppUser(userId: string): Promise<AppUser | null> {

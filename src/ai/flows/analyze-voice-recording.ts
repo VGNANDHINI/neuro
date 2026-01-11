@@ -4,39 +4,20 @@
  * @fileOverview An AI agent that analyzes a user's voice recording to identify potential vocal biomarkers of Parkinson's.
  *
  * - analyzeVoiceRecording - A function that handles the voice recording analysis process.
- * - AnalyzeVoiceRecordingInput - The input type for the analyzeVoiceRecording function.
+ * - AnalyzeVoiceRecordingInput - The input type for the analyzeVoiceRecording functionूं.
  * - AnalyzeVoiceRecordingOutput - The return type for the analyzeVoiceRecording function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import wav from 'wav';
-
-const AnalyzeVoiceRecordingInputSchema = z.object({
-  audioDataUri: z
-    .string()
-    .describe(
-      "A voice recording as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
-});
-export type AnalyzeVoiceRecordingInput = z.infer<typeof AnalyzeVoiceRecordingInputSchema>;
-
-export const AnalyzeVoiceRecordingOutputSchema = z.object({
-  pitch_score: z.number().describe('The pitch score of the voice recording.'),
-  volume_score: z.number().describe('The volume score of the voice recording.'),
-  clarity_score: z.number().describe('The clarity score of the voice recording.'),
-  tremor_score: z.number().describe('The tremor score of the voice recording.'),
-  overall_score: z.number().describe('The overall score of the voice recording.'),
-  risk_level: z
-    .string()
-    .describe("The risk level of the voice recording ('Low', 'Moderate', or 'High')."),
-  recommendation: z.string().describe('A recommendation based on the risk level.'),
-});
-export type AnalyzeVoiceRecordingOutput = z.infer<typeof AnalyzeVoiceRecordingOutputSchema>;
+import {
+  AnalyzeVoiceRecordingInputSchema,
+  AnalyzeVoiceRecordingOutputSchema,
+  type AnalyzeVoiceRecordingInput,
+} from '@/lib/types';
 
 export async function analyzeVoiceRecording(
   input: AnalyzeVoiceRecordingInput
-): Promise<AnalyzeVoiceRecordingOutput> {
+): Promise<any> {
   return analyzeVoiceRecordingFlow(input);
 }
 
