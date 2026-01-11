@@ -49,7 +49,7 @@ export function TappingTestClient() {
     if(timerRef.current) clearTimeout(timerRef.current);
     setTestState('analyzing');
     if (appUser) {
-      const result = await analyzeAndSaveTappingTest(tapCount, TEST_DURATION);
+      const result = await analyzeAndSaveTappingTest(appUser.id, tapCount, TEST_DURATION);
       if ('error' in result) {
         toast({ variant: 'destructive', title: 'Analysis Failed', description: result.error });
         setTestState('idle');

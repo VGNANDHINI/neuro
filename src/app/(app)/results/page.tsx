@@ -23,7 +23,7 @@ export default function ResultsPage() {
   useEffect(() => {
     if (appUser) {
       setLoading(true);
-      getAllTests().then((data) => {
+      getAllTests(appUser.id).then((data) => {
         setTests(data);
         setLoading(false);
       });

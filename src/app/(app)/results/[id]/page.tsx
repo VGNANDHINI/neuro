@@ -26,7 +26,7 @@ export default function ResultDetailPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     if (appUser) {
-      getTestDetails(params.id).then((data) => {
+      getTestDetails(appUser.id, params.id).then((data) => {
         // The server action already ensures the user owns the test
         setTest(data);
         setLoading(false);

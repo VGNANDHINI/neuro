@@ -144,11 +144,11 @@ export function SpiralTestClient() {
   };
 
   const stopDrawing = async () => {
-    if (!isDrawing) return;
+    if (!isDrawing || !appUser) return;
     setIsDrawing(false);
     if (points.length > 50) {
       setTestState('analyzing');
-      const result = await analyzeAndSaveSpiralTest(points);
+      const result = await analyzeAndSaveSpiralTest(appUser.id, points);
       if (result && 'error' in result) {
           toast({
             variant: 'destructive',

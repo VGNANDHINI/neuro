@@ -32,7 +32,7 @@ export default function ProgressPage() {
   useEffect(() => {
     if (appUser) {
       setLoading(true);
-      getProgressData(timeframe).then((result) => {
+      getProgressData(appUser.id, timeframe).then((result) => {
         setData(result);
         setLoading(false);
       });

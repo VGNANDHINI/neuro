@@ -41,7 +41,7 @@ function DashboardContent() {
         // We only fetch data once we have an appUser
         if (appUser) {
             setDataLoading(true);
-            getDashboardStats().then(data => {
+            getDashboardStats(appUser.id).then(data => {
                 setStats(data);
                 setDataLoading(false);
             });
