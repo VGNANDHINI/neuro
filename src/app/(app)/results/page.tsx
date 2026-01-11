@@ -30,9 +30,9 @@ export default function ResultsPage() {
       return; // Wait for authentication to resolve
     }
 
-    if (appUser) {
+    if (appUser && appUser.email) {
       setIsLoading(true);
-      getAllTests(appUser.id)
+      getAllTests(appUser.email)
         .then((data) => {
           setTests(data);
         })

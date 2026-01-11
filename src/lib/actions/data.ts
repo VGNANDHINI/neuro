@@ -49,8 +49,8 @@ export async function updateUserProfile(userId: string, data: Partial<AppUser>) 
 }
 
 // TEST ANALYSIS AND STORAGE
-export async function analyzeAndSaveSpiralTest(userId: string, points: { x: number; y: number; timestamp: number }[]) {
-  if (!userId) return { error: 'Authentication required.' };
+export async function analyzeAndSaveSpiralTest(userId: string, userEmail: string, points: { x: number; y: number; timestamp: number }[]) {
+  if (!userId || !userEmail) return { error: 'Authentication required.' };
   
   try {
     const result = await analyzeSpiralDrawing({ points: JSON.stringify(points) });
@@ -64,6 +64,7 @@ export async function analyzeAndSaveSpiralTest(userId: string, points: { x: numb
     
     const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
       userId,
+      userEmail,
       testType: 'spiral',
       testData: JSON.stringify(points),
       tremorScore: validatedResult.tremorScore,
@@ -86,8 +87,8 @@ export async function analyzeAndSaveSpiralTest(userId: string, points: { x: numb
   }
 }
 
-export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: string) {
-    if (!userId) return { error: 'Authentication required.' };
+export async function analyzeAndSaveVoiceTest(userId: string, userEmail: string, audioDataUri: string) {
+    if (!userId || !userEmail) return { error: 'Authentication required.' };
     
     try {
       const result = await analyzeVoiceRecording({ audioDataUri });
@@ -100,6 +101,7 @@ export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: stri
       
       const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
         userId,
+        userEmail,
         testType: 'voice',
         testData: audioDataUri.substring(0, 50) + '...', 
         pitchScore: validatedResult.pitch_score,
@@ -122,8 +124,8 @@ export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: stri
     }
 }
 
-export async function analyzeAndSaveTappingTest(userId: string, tapTimestamps: number[], duration: number) {
-    if (!userId) return { error: 'Authentication required.' };
+export async function analyzeAndSaveTappingTest(userId: string, userEmail: string, tapTimestamps: number[], duration: number) {
+    if (!userId || !userEmail) return { error: 'Authentication required.' };
     
     try {
       const result = await analyzeTappingPatterns({ tapTimestamps, duration });
@@ -136,6 +138,7 @@ export async function analyzeAndSaveTappingTest(userId: string, tapTimestamps: n
       
       const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
         userId,
+        userEmail,
         testType: 'tapping',
         testData: JSON.stringify({ tapCount: validatedResult.tapCount, duration }),
         tapCount: validatedResult.tapCount,
@@ -192,10 +195,10 @@ export async function getDashboardStats(userId: string) {
   };
 }
 
-export async function getAllTests(userId: string): Promise<TestResult[]> {
-  if (!userId) return [];
+export async function getAllTests(userEmail: string): Promise<TestResult[]> {
+  if (!userEmail) return [];
   
-  const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  const testsQuery = query(collection(db, 'tests'), where('userEmail', '==', userEmail), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
   return testsSnapshot.docs.map(doc => {
       const data = doc.data();

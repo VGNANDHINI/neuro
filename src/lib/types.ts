@@ -17,6 +17,7 @@ export type AppUser = {
 export type TestResult = {
   id: string;
   userId: string;
+  userEmail: string;
   testType: 'spiral' | 'voice' | 'tapping';
   testData: string; // JSON string of test raw data
   

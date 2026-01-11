@@ -63,7 +63,7 @@ export function VoiceTestClient() {
         reader.onloadend = async () => {
           const base64Audio = reader.result as string;
           if (appUser) {
-            const result = await analyzeAndSaveVoiceTest(appUser.id, base64Audio);
+            const result = await analyzeAndSaveVoiceTest(appUser.id, appUser.email, base64Audio);
              if ('error' in result) {
                 toast({ variant: 'destructive', title: 'Analysis Failed', description: result.error });
                 setTestState('idle');

@@ -148,7 +148,7 @@ export function SpiralTestClient() {
     setIsDrawing(false);
     if (points.length > 50) {
       setTestState('analyzing');
-      const result = await analyzeAndSaveSpiralTest(appUser.id, points);
+      const result = await analyzeAndSaveSpiralTest(appUser.id, appUser.email, points);
       if (result && 'error' in result) {
           toast({
             variant: 'destructive',

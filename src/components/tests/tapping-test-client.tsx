@@ -73,7 +73,7 @@ export function TappingTestClient() {
         return;
     }
     try {
-        const result = await analyzeAndSaveTappingTest(appUser.id, tapTimestamps, TEST_DURATION);
+        const result = await analyzeAndSaveTappingTest(appUser.id, appUser.email, tapTimestamps, TEST_DURATION);
         if (result && 'error' in result) {
             toast({ variant: 'destructive', title: 'Analysis Failed', description: result.error});
             resetTest();
