@@ -196,19 +196,27 @@ export async function getDashboardStats(userId: string) {
 }
 
 export async function getAllTests(userId: string): Promise<TestResult[]> {
-  if (!userId) return [];
-  
-  const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
-  const testsSnapshot = await getDocs(testsQuery);
-  return testsSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return { 
-          ...data, 
-          id: doc.id, 
-          createdAt: (data.createdAt as Timestamp).toDate().toISOString() 
-      } as TestResult;
-  });
+    if (!userId) return [];
+    
+    const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const testsSnapshot = await getDocs(testsQuery);
+    
+    return testsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        const createdAt = data.createdAt;
+        // Ensure createdAt is converted correctly, checking if it's a Firestore Timestamp
+        const isoString = createdAt instanceof Timestamp 
+            ? createdAt.toDate().toISOString() 
+            : new Date(createdAt).toISOString();
+            
+        return { 
+            ...data, 
+            id: doc.id, 
+            createdAt: isoString
+        } as TestResult;
+    });
 }
+
 
 export async function getTestDetails(userId: string, testId: string): Promise<TestResult | null> {
   if (!userId) return null;
