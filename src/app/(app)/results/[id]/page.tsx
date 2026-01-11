@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Activity, Mic, Hand } from 'lucide-react';
+import { ArrowLeft, Download, Activity, Mic } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   RadarChart,
@@ -74,7 +74,6 @@ export default function ResultDetailPage({ params }: { params: { id: string } })
   const testIcons = {
     spiral: <Activity className="h-8 w-8" />,
     voice: <Mic className="h-8 w-8" />,
-    tapping: <Hand className="h-8 w-8" />,
   };
   
   let chartData: { subject: string, value: number, fullMark: number }[] = [];
@@ -107,19 +106,6 @@ export default function ResultDetailPage({ params }: { params: { id: string } })
         { label: 'Volume Score', value: test.volumeScore?.toFixed(1) },
         { label: 'Clarity Score', value: test.clarityScore?.toFixed(1) },
         { label: 'Tremor Score', value: test.tremorScore?.toFixed(1) },
-      ];
-      break;
-    case 'tapping':
-      chartData = [
-        { subject: 'Speed', value: test.speedScore || 0, fullMark: 100 },
-        { subject: 'Consistency', value: test.consistencyScore || 0, fullMark: 100 },
-        { subject: 'Rhythm', value: test.rhythmScore || 0, fullMark: 100 },
-      ];
-      scoreCards = [
-        { label: 'Speed Score', value: test.speedScore?.toFixed(1) },
-        { label: 'Consistency Score', value: test.consistencyScore?.toFixed(1) },
-        { label: 'Rhythm Score', value: test.rhythmScore?.toFixed(1) },
-        { label: 'Taps/sec', value: test.tapsPerSecond?.toFixed(2) },
       ];
       break;
   }

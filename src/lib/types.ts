@@ -16,7 +16,7 @@ export type AppUser = {
 export type TestResult = {
   id: string;
   userId: string;
-  testType: 'spiral' | 'voice' | 'tapping';
+  testType: 'spiral' | 'voice';
   testData: string; // JSON string of test raw data
   
   // Scores
@@ -33,11 +33,6 @@ export type TestResult = {
   volumeScore?: number;
   clarityScore?: number;
   
-  // Tapping specific
-  tapCount?: number;
-  tapsPerSecond?: number;
-  rhythmScore?: number;
-
   createdAt: Timestamp;
 };
 
@@ -95,35 +90,3 @@ export const AnalyzeVoiceRecordingOutputSchema = z.object({
   recommendation: z.string().describe('A recommendation based on the risk level.'),
 });
 export type AnalyzeVoiceRecordingOutput = z.infer<typeof AnalyzeVoiceRecordingOutputSchema>;
-
-
-// Tapping Test
-export const AnalyzeTappingInputSchema = z.object({
-  tapCount: z.number().describe('The number of taps recorded during the test.'),
-  duration: z.number().describe('The duration of the tapping test in seconds.'),
-});
-export type AnalyzeTappingInput = z.infer<typeof AnalyzeTappingInputSchema>;
-
-export const AnalyzeTappingOutputSchema = z.object({
-  tapsPerSecond: z
-    .number()
-    .describe('The number of taps per second during the test.'),
-  speedScore: z
-    .number()
-    .describe('A score representing the speed of tapping.'),
-  consistencyScore: z
-    .number()
-    .describe('A score representing the consistency of tapping.'),
-  rhythmScore: z.number().describe('A score representing the rhythm of tapping.'),
-  overallScore: z
-    .number()
-    .describe('An overall score assessing the motor skills.'),
-  riskLevel: z
-    .string()
-    .describe(
-      "The risk level assessment based on the tapping analysis ('Low', 'Moderate', or 'High')."
-    ),
-  recommendation:
-    z.string().describe('A recommendation based on the risk level.'),
-});
-export type AnalyzeTappingOutput = z.infer<typeof AnalyzeTappingOutputSchema>;
