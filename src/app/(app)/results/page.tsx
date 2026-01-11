@@ -21,7 +21,7 @@ export default function ResultsPage() {
   const { appUser, loading: authLoading } = useAuth();
   const [tests, setTests] = useState<TestResult[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'spiral' | 'voice'>('all');
+  const [filter, setFilter] = useState<'all' | 'spiral' | 'voice' | 'tapping'>('all');
   const router = useRouter();
 
   useEffect(() => {
@@ -65,6 +65,7 @@ export default function ResultsPage() {
     const icons: { [key: string]: JSX.Element } = {
       spiral: <Activity className="h-5 w-5 text-primary" />,
       voice: <Mic className="h-5 w-5 text-primary" />,
+      tapping: <Mic className="h-5 w-5 text-primary" />,
     };
     return icons[type] || <FileText className="h-5 w-5 text-primary" />;
   };
@@ -99,27 +100,6 @@ export default function ResultsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Test Results</h1>
-          <p className="text-muted-foreground">Review your completed assessments.</p>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              Filter: <span className="capitalize ml-1 font-semibold">{filter}</span>
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setFilter('all')}>All</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('spiral')}>Spiral</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('voice')}>Voice</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
       {pageLoading ? (
         renderSkeleton()
       ) : filteredTests.length > 0 ? (
