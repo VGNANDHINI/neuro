@@ -97,7 +97,7 @@ const analyzeTappingPatternsFlow = ai.defineFlow(
   },
   async ({ tapTimestamps, duration }) => {
     
-    if (tapTimestamps.length < 25) {
+    if (tapTimestamps.length < 10) {
         return {
             tapCount: tapTimestamps.length,
             tapsPerSecond: tapTimestamps.length / duration,
