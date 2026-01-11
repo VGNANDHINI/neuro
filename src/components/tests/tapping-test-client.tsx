@@ -58,6 +58,9 @@ export function TappingTestClient() {
         setAnalysis(result);
         setTestState('results');
       }
+    } else {
+        toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not identify user. Please log in again.' });
+        resetTest();
     }
   };
   
