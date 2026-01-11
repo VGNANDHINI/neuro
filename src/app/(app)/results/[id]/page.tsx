@@ -31,11 +31,18 @@ export default function ResultDetailPage() {
     if (appUser && id) {
       getTestDetails(appUser.id, id).then((data) => {
         // The server action already ensures the user owns the test
-        setTest(data);
+        if (data) {
+          setTest(data);
+        } else {
+          // Handle case where test is not found or doesn't belong to user
+          setTest(null);
+        }
         setLoading(false);
       });
     } else if (!appUser) {
+        // If there's no user, stop loading and clear test
         setLoading(false);
+        setTest(null);
     }
   }, [appUser, id]);
 

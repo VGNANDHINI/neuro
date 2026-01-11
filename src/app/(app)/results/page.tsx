@@ -14,14 +14,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Activity, ChevronDown, Filter, Mic, FileText, ChevronRight } from 'lucide-react';
+import { Activity, ChevronDown, Filter, Mic, FileText, ChevronRight, Hand } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ResultsPage() {
   const { appUser, loading: authLoading } = useAuth();
   const [tests, setTests] = useState<TestResult[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'spiral' | 'voice' | 'tapping'>('all');
   const router = useRouter();
 
   useEffect(() => {
@@ -41,13 +40,6 @@ export default function ResultsPage() {
     }
   }, [appUser, authLoading]);
 
-  const filteredTests = useMemo(() => {
-    if (filter === 'all') {
-      return tests;
-    }
-    return tests.filter((test) => test.testType === filter);
-  }, [tests, filter]);
-
   const getRiskClasses = (risk: string) => {
     switch (risk) {
       case 'Low':
@@ -65,7 +57,7 @@ export default function ResultsPage() {
     const icons: { [key: string]: JSX.Element } = {
       spiral: <Activity className="h-5 w-5 text-primary" />,
       voice: <Mic className="h-5 w-5 text-primary" />,
-      tapping: <Mic className="h-5 w-5 text-primary" />,
+      tapping: <Hand className="h-5 w-5 text-primary" />,
     };
     return icons[type] || <FileText className="h-5 w-5 text-primary" />;
   };
@@ -102,9 +94,9 @@ export default function ResultsPage() {
     <div className="p-4 md:p-8">
       {pageLoading ? (
         renderSkeleton()
-      ) : filteredTests.length > 0 ? (
+      ) : tests.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTests.map((test) => (
+          {tests.map((test) => (
             <Card
               key={test.id}
               className="flex flex-col hover:border-primary/50 transition-colors"
@@ -149,8 +141,12 @@ export default function ResultsPage() {
         </div>
       ) : (
         <Card>
-            <CardContent>
-                
+            <CardContent className="p-16 text-center">
+                 <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold">No Tests Completed</h3>
+                <p className="text-muted-foreground mt-2">
+                    You have not completed any tests yet.
+                </p>
             </CardContent>
         </Card>
       )}
