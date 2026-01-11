@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -105,7 +106,9 @@ export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: stri
 }
 
 export async function analyzeAndSaveTappingTest(userId: string, tapCount: number, duration: number) {
-    if (!userId) return { error: 'Authentication required.' };
+    if (!userId) {
+        return { error: 'Authentication required.' };
+    }
 
     try {
       const result = await analyzeTapping({ tapCount, duration });
@@ -229,7 +232,7 @@ export async function getProgressData(userId: string, timeframe: string) {
 
   const formattedProgress = Object.values(dailyProgress).map(day => ({
     ...day,
-    date: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: new Date(day.date).toLocaleString('en-US', { month: 'short', day: 'numeric' }),
   }));
 
   const allScores = tests.map(t => t.overallScore);
@@ -258,3 +261,5 @@ export async function getProgressData(userId: string, timeframe: string) {
     }
   };
 }
+
+    
