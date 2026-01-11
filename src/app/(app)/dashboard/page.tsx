@@ -1,4 +1,5 @@
-import { AuthGuard } from '@/components/auth-guard';
+'use client';
+
 import { getDashboardStats } from '@/lib/actions/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -15,28 +16,11 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { getAuth } from 'firebase/auth';
-import { app } from '@/lib/firebase';
-import { redirect } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { cookies } from 'next/headers';
-import { getAppUser } from '@/lib/actions/data';
+import * as React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-async function getUserId() {
-    // This is a placeholder for a proper server-side session management
-    // In a real app, you would get this from an encrypted cookie or session store
-    // For now, we are simulating this.
-    // This will break in a real deployed environment without a proper session implementation.
-    return '...'; // This part needs a real user ID provider on the server.
-}
-
-export default async function DashboardPage() {
-    // This is a temporary solution for getting user on server components.
-    // Ideally, we'd have a server-side session.
-    // This will not work correctly without a way to get the current user's ID on the server.
-    // I'm assuming a client component wrapper would provide this.
-    // Let's refactor to use a client component to fetch user-specific data.
-
+export default function DashboardPage() {
     return (
         <div className="p-4 md:p-8">
             <h1 className="text-3xl font-bold font-headline mb-8">Dashboard</h1>
@@ -48,28 +32,50 @@ export default async function DashboardPage() {
     );
 }
 
-// A client component to fetch and display data
 function DashboardContent() {
-    'use client';
     const { appUser, loading } = useAuth();
-    const [stats, setStats] = React.useState(null);
+    const [stats, setStats] = React.useState<any>(null);
+    const [dataLoading, setDataLoading] = React.useState(true);
 
     React.useEffect(() => {
         if (appUser) {
-            getDashboardStats(appUser.id).then(setStats);
+            setDataLoading(true);
+            getDashboardStats(appUser.id).then(data => {
+                setStats(data);
+                setDataLoading(false);
+            });
         }
     }, [appUser]);
 
-    if (loading || !appUser || !stats) {
+    if (loading || !appUser || dataLoading) {
         return (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => (
-                    <Card key={i} className="animate-pulse">
-                        <CardHeader><div className="h-6 w-3/4 bg-muted rounded"></div></CardHeader>
-                        <CardContent><div className="h-10 w-1/2 bg-muted rounded"></div></CardContent>
+            <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {[...Array(3)].map((_, i) => (
+                     <Card key={i}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                           <Skeleton className="h-5 w-24" />
+                           <Skeleton className="h-5 w-5" />
+                        </CardHeader>
+                        <CardContent><Skeleton className="h-8 w-20" /></CardContent>
                     </Card>
                 ))}
             </div>
+             <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                    <Skeleton className="h-8 w-48 mb-4" />
+                    <div className="grid md:grid-cols-3 gap-4">
+                        <Skeleton className="h-36 w-full" />
+                        <Skeleton className="h-36 w-full" />
+                        <Skeleton className="h-36 w-full" />
+                    </div>
+                </div>
+                <div>
+                    <Skeleton className="h-8 w-48 mb-4" />
+                    <Card><CardContent className="p-4 space-y-4"><Skeleton className="h-32 w-full" /></CardContent></Card>
+                </div>
+            </div>
+            </>
         );
     }
     
@@ -168,5 +174,3 @@ function DashboardContent() {
         </>
     );
 }
-
-import * as React from 'react';
