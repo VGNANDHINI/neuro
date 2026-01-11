@@ -19,7 +19,7 @@ const AnalyzeSpiralDrawingInputSchema = z.object({
 });
 export type AnalyzeSpiralDrawingInput = z.infer<typeof AnalyzeSpiralDrawingInputSchema>;
 
-const AnalyzeSpiralDrawingOutputSchema = z.object({
+export const AnalyzeSpiralDrawingOutputSchema = z.object({
   tremorScore: z
     .number()
     .describe('A score indicating the level of tremor detected in the drawing (0-100, higher is worse).'),

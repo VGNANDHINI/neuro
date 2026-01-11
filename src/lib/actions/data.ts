@@ -17,10 +17,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { AppUser, TestResult } from '@/lib/types';
-import { analyzeSpiralDrawing } from '@/ai/flows/analyze-spiral-drawing';
-import { analyzeVoiceRecording } from '@/ai/flows/analyze-voice-recording';
-import { analyzeTapping } from '@/ai/flows/analyze-tapping-patterns';
-import { headers } from 'next/headers';
+import { analyzeSpiralDrawing, AnalyzeSpiralDrawingOutputSchema } from '@/ai/flows/analyze-spiral-drawing';
+import { analyzeVoiceRecording, AnalyzeVoiceRecordingOutputSchema } from '@/ai/flows/analyze-voice-recording';
+import { analyzeTapping, AnalyzeTappingOutputSchema } from '@/ai/flows/analyze-tapping-patterns';
 
 // USER DATA
 export async function getAppUser(userId: string): Promise<AppUser | null> {
@@ -50,25 +49,31 @@ export async function analyzeAndSaveSpiralTest(userId: string, points: { x: numb
   
   try {
     const result = await analyzeSpiralDrawing({ points: JSON.stringify(points) });
+    const validation = AnalyzeSpiralDrawingOutputSchema.safeParse(result);
+    if (!validation.success) {
+      console.error('Invalid AI response for spiral test:', validation.error);
+      throw new Error('Invalid AI response format.');
+    }
+    const validatedResult = validation.data;
     
     const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
       userId,
       testType: 'spiral',
-      testData: JSON.stringify(points),
-      tremorScore: result.tremorScore,
-      smoothnessScore: result.smoothnessScore,
-      speedScore: result.speedScore,
-      consistencyScore: result.consistencyScore,
-      overallScore: result.overallScore,
-      riskLevel: result.riskLevel,
-      recommendation: result.recommendation,
+      testData: JSON.stringify(points), // Storing points might be large, consider summarizing
+      tremorScore: validatedResult.tremorScore,
+      smoothnessScore: validatedResult.smoothnessScore,
+      speedScore: validatedResult.speedScore,
+      consistencyScore: validatedResult.consistencyScore,
+      overallScore: validatedResult.overallScore,
+      riskLevel: validatedResult.riskLevel,
+      recommendation: validatedResult.recommendation,
     };
 
     const docRef = await addDoc(collection(db, 'tests'), {
       ...testResult,
       createdAt: serverTimestamp(),
     });
-    return { id: docRef.id, ...result };
+    return { id: docRef.id, ...validatedResult };
   } catch (error) {
     console.error('Spiral test analysis failed:', error);
     return { error: 'Analysis failed.' };
@@ -80,25 +85,33 @@ export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: stri
     
     try {
       const result = await analyzeVoiceRecording({ audioDataUri });
+      const validation = AnalyzeVoiceRecordingOutputSchema.safeParse(result);
+      if (!validation.success) {
+        console.error('Invalid AI response for voice test:', validation.error);
+        throw new Error('Invalid AI response format.');
+      }
+      const validatedResult = validation.data;
       
       const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
         userId,
         testType: 'voice',
-        testData: audioDataUri.substring(0, 30) + '...', // Don't store the whole blob
-        pitchScore: result.pitch_score,
-        volumeScore: result.volume_score,
-        clarityScore: result.clarity_score,
-        tremorScore: result.tremor_score,
-        overallScore: result.overall_score,
-        riskLevel: result.risk_level as 'Low' | 'Moderate' | 'High',
-        recommendation: result.recommendation,
+        // Storing the full data URI in Firestore is not recommended.
+        // In a real app, upload this to Firebase Storage and store the URL.
+        testData: audioDataUri.substring(0, 50) + '...', 
+        pitchScore: validatedResult.pitch_score,
+        volumeScore: validatedResult.volume_score,
+        clarityScore: validatedResult.clarity_score,
+        tremorScore: validatedResult.tremor_score,
+        overallScore: validatedResult.overall_score,
+        riskLevel: validatedResult.risk_level as 'Low' | 'Moderate' | 'High',
+        recommendation: validatedResult.recommendation,
       };
   
       const docRef = await addDoc(collection(db, 'tests'), {
         ...testResult,
         createdAt: serverTimestamp(),
       });
-      return { id: docRef.id, ...result };
+      return { id: docRef.id, ...validatedResult };
     } catch (error) {
       console.error('Voice test analysis failed:', error);
       return { error: 'Analysis failed.' };
@@ -112,26 +125,32 @@ export async function analyzeAndSaveTappingTest(userId: string, tapCount: number
 
     try {
       const result = await analyzeTapping({ tapCount, duration });
+      const validation = AnalyzeTappingOutputSchema.safeParse(result);
+       if (!validation.success) {
+        console.error('Invalid AI response for tapping test:', validation.error);
+        throw new Error('Invalid AI response format.');
+      }
+      const validatedResult = validation.data;
   
       const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
         userId,
         testType: 'tapping',
         testData: JSON.stringify({ tapCount, duration }),
         tapCount,
-        tapsPerSecond: result.tapsPerSecond,
-        speedScore: result.speedScore,
-        consistencyScore: result.consistencyScore,
-        rhythmScore: result.rhythmScore,
-        overallScore: result.overallScore,
-        riskLevel: result.riskLevel as 'Low' | 'Moderate' | 'High',
-        recommendation: result.recommendation,
+        tapsPerSecond: validatedResult.tapsPerSecond,
+        speedScore: validatedResult.speedScore,
+        consistencyScore: validatedResult.consistencyScore,
+        rhythmScore: validatedResult.rhythmScore,
+        overallScore: validatedResult.overallScore,
+        riskLevel: validatedResult.riskLevel as 'Low' | 'Moderate' | 'High',
+        recommendation: validatedResult.recommendation,
       };
   
       const docRef = await addDoc(collection(db, 'tests'), {
         ...testResult,
         createdAt: serverTimestamp(),
       });
-      return { id: docRef.id, ...result };
+      return { id: docRef.id, ...validatedResult };
     } catch (error) {
       console.error('Tapping test analysis failed:', error);
       return { error: 'Analysis failed.' };
@@ -200,6 +219,9 @@ export async function getTestDetails(userId: string, testId: string): Promise<Te
 export async function getProgressData(userId: string, timeframe: string) {
   if (!userId) return null;
   
+  // IMPORTANT: The following queries require a composite index in Firestore.
+  // Go to your Firebase console -> Firestore -> Indexes and create a composite index for
+  // the 'tests' collection with the fields: `userId` (Ascending) and `createdAt` (Ascending).
   const days = parseInt(timeframe, 10);
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -207,30 +229,38 @@ export async function getProgressData(userId: string, timeframe: string) {
   const testsQuery = query(
       collection(db, 'tests'), 
       where('userId', '==', userId),
-      where('createdAt', '>=', startDate), 
+      where('createdAt', '>=', Timestamp.fromDate(startDate)), 
       orderBy('createdAt', 'asc')
   );
   const testsSnapshot = await getDocs(testsQuery);
   const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
   
   // Group by date and average scores if multiple tests on same day
-  const dailyProgress: { [key: string]: { date: string; spiral?: number; voice?: number; tapping?: number, count: number } } = {};
+  const dailyAverages: { [key: string]: { date: string, spiral?: number, voice?: number, tapping?: number } } = {};
+  const dailySums: { [key: string]: { [key: string]: { sum: number, count: number } } } = {};
 
   tests.forEach(test => {
     const dateKey = (test.createdAt as any).toDate().toISOString().split('T')[0];
-    if (!dailyProgress[dateKey]) {
-      dailyProgress[dateKey] = { date: dateKey, count: 0 };
+    if (!dailySums[dateKey]) {
+      dailySums[dateKey] = {};
+    }
+    if (!dailySums[dateKey][test.testType]) {
+        dailySums[dateKey][test.testType] = { sum: 0, count: 0 };
     }
     
-    if (!dailyProgress[dateKey][test.testType]) {
-        dailyProgress[dateKey][test.testType] = test.overallScore;
-    } else {
-        // Average if multiple tests of the same type on the same day
-        dailyProgress[dateKey][test.testType] = (dailyProgress[dateKey][test.testType] + test.overallScore) / 2;
-    }
+    dailySums[dateKey][test.testType].sum += test.overallScore;
+    dailySums[dateKey][test.testType].count += 1;
   });
 
-  const formattedProgress = Object.values(dailyProgress).map(day => ({
+  Object.keys(dailySums).forEach(dateKey => {
+      dailyAverages[dateKey] = { date: dateKey };
+      Object.keys(dailySums[dateKey]).forEach(testType => {
+          const { sum, count } = dailySums[dateKey][testType];
+          dailyAverages[dateKey][testType] = sum / count;
+      });
+  });
+
+  const formattedProgress = Object.values(dailyAverages).map(day => ({
     ...day,
     date: new Date(day.date).toLocaleString('en-US', { month: 'short', day: 'numeric' }),
   }));
@@ -243,13 +273,13 @@ export async function getProgressData(userId: string, timeframe: string) {
   const previousPeriodQuery = query(
       collection(db, 'tests'),
       where('userId', '==', userId),
-      where('createdAt', '>=', previousPeriodStartDate),
-      where('createdAt', '<', startDate)
+      where('createdAt', '>=', Timestamp.fromDate(previousPeriodStartDate)),
+      where('createdAt', '<', Timestamp.fromDate(startDate))
   );
   const previousSnapshot = await getDocs(previousPeriodQuery);
   const previousScores = previousSnapshot.docs.map(doc => doc.data().overallScore as number);
   const previousAverage = previousScores.length > 0 ? previousScores.reduce((a,b) => a+b, 0) / previousScores.length : 0;
-  const trend = previousAverage > 0 ? ((average - previousAverage) / previousAverage) * 100 : 0;
+  const trend = previousAverage > 0 ? ((average - previousAverage) / previousAverage) * 100 : (average > 0 ? 100 : 0);
 
 
   return {
@@ -261,5 +291,3 @@ export async function getProgressData(userId: string, timeframe: string) {
     }
   };
 }
-
-    

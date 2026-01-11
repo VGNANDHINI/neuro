@@ -21,7 +21,7 @@ const AnalyzeVoiceRecordingInputSchema = z.object({
 });
 export type AnalyzeVoiceRecordingInput = z.infer<typeof AnalyzeVoiceRecordingInputSchema>;
 
-const AnalyzeVoiceRecordingOutputSchema = z.object({
+export const AnalyzeVoiceRecordingOutputSchema = z.object({
   pitch_score: z.number().describe('The pitch score of the voice recording.'),
   volume_score: z.number().describe('The volume score of the voice recording.'),
   clarity_score: z.number().describe('The clarity score of the voice recording.'),

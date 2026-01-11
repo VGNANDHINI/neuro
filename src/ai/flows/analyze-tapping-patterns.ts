@@ -17,7 +17,7 @@ const AnalyzeTappingInputSchema = z.object({
 });
 export type AnalyzeTappingInput = z.infer<typeof AnalyzeTappingInputSchema>;
 
-const AnalyzeTappingOutputSchema = z.object({
+export const AnalyzeTappingOutputSchema = z.object({
   tapsPerSecond: z
     .number()
     .describe('The number of taps per second during the test.'),
