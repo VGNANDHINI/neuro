@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AppProviders } from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import './print.css';
 
 export const metadata: Metadata = {
   title: 'NeuroAI Health',

@@ -2,11 +2,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getTestDetails } from '@/lib/actions/data';
-import type { TestResult } from '@/lib/types';
+import type { AppUser, TestResult } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Download, Activity, Mic, Hand } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,6 +17,7 @@ import {
   Radar,
   ResponsiveContainer,
 } from 'recharts';
+import { ReportLayout } from '@/components/report-layout';
 
 export default function ResultDetailPage() {
   const params = useParams();
@@ -33,6 +34,8 @@ export default function ResultDetailPage() {
         setTest(data);
         setLoading(false);
       });
+    } else if (!appUser) {
+        setLoading(false);
     }
   }, [appUser, id]);
 
@@ -53,7 +56,7 @@ export default function ResultDetailPage() {
     );
   }
 
-  if (!test) {
+  if (!test || !appUser) {
     return (
       <div className="p-8 text-center">
         <h2 className="text-xl font-semibold">Test not found</h2>
@@ -128,7 +131,8 @@ export default function ResultDetailPage() {
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <>
+    <div className="p-4 md:p-8 print:hidden">
       <div className="flex items-center justify-between mb-8">
         <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
         <Button onClick={() => window.print()}><Download className="mr-2 h-4 w-4" /> Export PDF</Button>
@@ -200,5 +204,9 @@ export default function ResultDetailPage() {
             </CardContent>
         </Card>
     </div>
+    <div className="hidden print:block">
+        <ReportLayout user={appUser} test={test} chartData={chartData} scoreCards={scoreCards} />
+    </div>
+    </>
   );
 }
