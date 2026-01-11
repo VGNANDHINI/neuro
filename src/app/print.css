@@ -4,6 +4,8 @@
     color: black !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    margin: 0;
+    padding: 0;
   }
 
   .print-hidden {
@@ -12,6 +14,16 @@
 
   .print-block {
     display: block !important;
+  }
+
+  /* Ensure the main app content is hidden */
+  main > div.print-hidden {
+    display: none !important;
+  }
+  
+  /* Ensure the body only contains the printable content */
+  body > div:not(.print-block), body > header, body > main > *:not(.print-block) {
+    display: none !important;
   }
 
   @page {
