@@ -126,8 +126,8 @@ export function ReportLayout({ user, test, chartData, scoreCards }: ReportLayout
                         <p className="text-2xl font-bold text-gray-800">{metric.value}</p>
                     </div>
                 ))}
-            </CardContent>
-        </Card>
+            </div>
+          </div>
         </section>
       </main>
 
