@@ -101,8 +101,7 @@ export default function ResultsPage() {
         </DropdownMenu>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
+      <div className="border rounded-lg overflow-hidden">
           {loading || authLoading ? renderSkeleton() : 
             filteredTests.length > 0 ? (
                 <Table>
@@ -146,8 +145,7 @@ export default function ResultsPage() {
                 </div>
             )
           }
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }
