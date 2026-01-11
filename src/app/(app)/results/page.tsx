@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getAllTests } from '@/lib/actions/data';
 import type { TestResult } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -27,8 +27,11 @@ export default function ResultsPage() {
         setTests(data);
         setLoading(false);
       });
+    } else if (!authLoading) {
+      // If auth is done and there's no user, stop loading
+      setLoading(false);
     }
-  }, [appUser]);
+  }, [appUser, authLoading]);
 
   const filteredTests = useMemo(() => {
     if (filter === 'all') return tests;
@@ -45,7 +48,7 @@ export default function ResultsPage() {
   };
   
   const TestIcon = ({ type }: { type: string }) => {
-    const icons = {
+    const icons: { [key: string]: JSX.Element } = {
         spiral: <Activity className="h-5 w-5 text-primary" />,
         voice: <Mic className="h-5 w-5 text-primary" />,
     };
