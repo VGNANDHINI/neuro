@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Activity, Mic } from 'lucide-react';
+import { ArrowLeft, Download, Activity, Mic, Hand } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   RadarChart,
@@ -75,6 +75,7 @@ export default function ResultDetailPage() {
   const testIcons = {
     spiral: <Activity className="h-8 w-8" />,
     voice: <Mic className="h-8 w-8" />,
+    tapping: <Hand className="h-8 w-8" />,
   };
   
   let chartData: { subject: string, value: number, fullMark: number }[] = [];
@@ -109,6 +110,21 @@ export default function ResultDetailPage() {
         { label: 'Tremor Score', value: test.tremorScore?.toFixed(1) },
       ];
       break;
+    case 'tapping':
+        chartData = [
+            { subject: 'Speed', value: test.speedScore || 0, fullMark: 100 },
+            { subject: 'Consistency', value: test.consistencyScore || 0, fullMark: 100 },
+            { subject: 'Rhythm', value: test.rhythmScore || 0, fullMark: 100 },
+            { subject: 'Fatigue Res.', value: test.fatigueScore || 0, fullMark: 100 },
+        ];
+        scoreCards = [
+            { label: 'Speed Score', value: test.speedScore?.toFixed(1) },
+            { label: 'Consistency Score', value: test.consistencyScore?.toFixed(1) },
+            { label: 'Rhythm Score', value: test.rhythmScore?.toFixed(1) },
+            { label: 'Fatigue Score', value: test.fatigueScore?.toFixed(1) },
+            { label: 'Taps/Sec', value: test.tapsPerSecond?.toFixed(1) },
+        ];
+        break;
   }
 
   return (
@@ -174,7 +190,7 @@ export default function ResultDetailPage() {
       </div>
        <Card className="mt-6">
             <CardHeader><CardTitle>Detailed Metrics</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {scoreCards.map(metric => (
                     <div key={metric.label} className="p-4 bg-muted/50 rounded-lg">
                         <p className="text-sm text-muted-foreground">{metric.label}</p>

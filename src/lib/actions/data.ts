@@ -220,73 +220,71 @@ export async function getTestDetails(userId: string, testId: string): Promise<Te
 }
 
 export async function getProgressData(userId: string, timeframe: string) {
-  if (!userId) return null;
-  
-  const days = parseInt(timeframe, 10);
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
+    if (!userId) return null;
 
-  const testsQuery = query(
-      collection(db, 'tests'), 
-      where('userId', '==', userId),
-      where('createdAt', '>=', Timestamp.fromDate(startDate)), 
-      orderBy('createdAt', 'asc')
-  );
-  const testsSnapshot = await getDocs(testsQuery);
-  const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
-  
-  const dailySums: { [key: string]: { [key: string]: { sum: number, count: number } } } = {};
+    const days = parseInt(timeframe, 10);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
-  tests.forEach(test => {
-    const dateKey = (test.createdAt as any).toDate().toISOString().split('T')[0];
-    if (!dailySums[dateKey]) {
-      dailySums[dateKey] = {};
-    }
-    if (!dailySums[dateKey][test.testType]) {
-        dailySums[dateKey][test.testType] = { sum: 0, count: 0 };
-    }
+    const testsQuery = query(
+        collection(db, 'tests'),
+        where('userId', '==', userId),
+        where('createdAt', '>=', Timestamp.fromDate(startDate)),
+        orderBy('createdAt', 'asc')
+    );
+    const testsSnapshot = await getDocs(testsQuery);
+    const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Omit<TestResult, 'id'> })) as TestResult[];
+
+    const dailyAverages: { [key: string]: { [key: string]: { sum: number; count: number } } } = {};
+
+    tests.forEach(test => {
+        const dateKey = (test.createdAt as any).toDate().toISOString().split('T')[0];
+        if (!dailyAverages[dateKey]) {
+            dailyAverages[dateKey] = {};
+        }
+        if (!dailyAverages[dateKey][test.testType]) {
+            dailyAverages[dateKey][test.testType] = { sum: 0, count: 0 };
+        }
+        dailyAverages[dateKey][test.testType].sum += test.overallScore;
+        dailyAverages[dateKey][test.testType].count += 1;
+    });
+
+    const formattedProgress = Object.keys(dailyAverages).map(dateKey => {
+        const dayData: { date: string; spiral?: number; voice?: number; tapping?: number } = {
+            date: new Date(dateKey).toLocaleString('en-US', { month: 'short', day: 'numeric' }),
+        };
+        for (const testType in dailyAverages[dateKey]) {
+            const { sum, count } = dailyAverages[dateKey][testType];
+            if (count > 0) {
+                dayData[testType as 'spiral' | 'voice' | 'tapping'] = sum / count;
+            }
+        }
+        return dayData;
+    });
+
+    const allScores = tests.map(t => t.overallScore);
+    const average = allScores.length > 0 ? allScores.reduce((acc, t) => acc + t, 0) / allScores.length : 0;
+  
+    const previousPeriodStartDate = new Date();
+    previousPeriodStartDate.setDate(previousPeriodStartDate.getDate() - days * 2);
     
-    dailySums[dateKey][test.testType].sum += test.overallScore;
-    dailySums[dateKey][test.testType].count += 1;
-  });
-  
-  const dailyAverages: { date: string, spiral?: number, voice?: number, tapping?: number }[] = [];
-  Object.keys(dailySums).forEach(dateKey => {
-      const dayData: { date: string, spiral?: number, voice?: number, tapping?: number } = { date: dateKey };
-      Object.keys(dailySums[dateKey]).forEach(testType => {
-          const { sum, count } = dailySums[dateKey][testType];
-          dayData[testType] = sum / count;
-      });
-      dailyAverages.push(dayData)
-  });
+    const previousPeriodQuery = query(
+        collection(db, 'tests'),
+        where('userId', '==', userId),
+        where('createdAt', '>=', Timestamp.fromDate(previousPeriodStartDate)),
+        where('createdAt', '<', Timestamp.fromDate(startDate))
+    );
+    const previousSnapshot = await getDocs(previousPeriodQuery);
+    const previousScores = previousSnapshot.docs.map(doc => doc.data().overallScore as number);
+    const previousAverage = previousScores.length > 0 ? previousScores.reduce((a,b) => a+b, 0) / previousScores.length : 0;
+    const trend = previousAverage > 0 ? ((average - previousAverage) / previousAverage) * 100 : (average > 0 ? 100 : 0);
 
-  const formattedProgress = dailyAverages.map(day => ({
-    ...day,
-    date: new Date(day.date).toLocaleString('en-US', { month: 'short', day: 'numeric' }),
-  }));
-
-  const allScores = tests.map(t => t.overallScore);
-  const average = allScores.length > 0 ? allScores.reduce((acc, t) => acc + t, 0) / allScores.length : 0;
-  
-  const previousPeriodStartDate = new Date();
-  previousPeriodStartDate.setDate(previousPeriodStartDate.getDate() - days * 2);
-  const previousPeriodQuery = query(
-      collection(db, 'tests'),
-      where('userId', '==', userId),
-      where('createdAt', '>=', Timestamp.fromDate(previousPeriodStartDate)),
-      where('createdAt', '<', Timestamp.fromDate(startDate))
-  );
-  const previousSnapshot = await getDocs(previousPeriodQuery);
-  const previousScores = previousSnapshot.docs.map(doc => doc.data().overallScore as number);
-  const previousAverage = previousScores.length > 0 ? previousScores.reduce((a,b) => a+b, 0) / previousScores.length : 0;
-  const trend = previousAverage > 0 ? ((average - previousAverage) / previousAverage) * 100 : (average > 0 ? 100 : 0);
-
-  return {
-    progress: formattedProgress,
-    stats: {
-        total: tests.length,
-        average: average,
-        trend: trend,
-    }
-  };
+    return {
+        progress: formattedProgress,
+        stats: {
+            total: tests.length,
+            average: average,
+            trend: trend,
+        }
+    };
 }

@@ -3,21 +3,20 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getAllTests } from '@/lib/actions/data';
 import type { TestResult } from '@/lib/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Activity, ChevronDown, Filter, Mic, FileText } from 'lucide-react';
+import { Activity, ChevronDown, Filter, Mic, FileText, Hand, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ResultsPage() {
   const { appUser, loading: authLoading } = useAuth();
   const [tests, setTests] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'spiral' | 'voice'>('all');
+  const [filter, setFilter] = useState<'all' | 'spiral' | 'voice' | 'tapping'>('all');
   const router = useRouter();
 
   useEffect(() => {
@@ -28,7 +27,6 @@ export default function ResultsPage() {
         setLoading(false);
       });
     } else if (!authLoading) {
-      // If auth is done and there's no user, stop loading
       setLoading(false);
     }
   }, [appUser, authLoading]);
@@ -51,31 +49,26 @@ export default function ResultsPage() {
     const icons: { [key: string]: JSX.Element } = {
         spiral: <Activity className="h-5 w-5 text-primary" />,
         voice: <Mic className="h-5 w-5 text-primary" />,
+        tapping: <Hand className="h-5 w-5 text-primary" />,
     };
     return icons[type] || null;
   }
 
   const renderSkeleton = () => (
-    <Table>
-        <TableHeader>
-            <TableRow>
-                <TableHead className="w-[250px]">Test Type</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Risk Level</TableHead>
-                <TableHead className="text-right">Overall Score</TableHead>
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            {[...Array(5)].map((_, i) => (
-                <TableRow key={i}>
-                    <TableCell><Skeleton className="h-6 w-3/4" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-3/4" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-20" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-6 w-16 ml-auto" /></TableCell>
-                </TableRow>
-            ))}
-        </TableBody>
-    </Table>
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent className="flex items-center justify-between">
+                    <Skeleton className="h-10 w-20" />
+                    <Skeleton className="h-8 w-24" />
+                </CardContent>
+            </Card>
+        ))}
+    </div>
   );
 
   return (
@@ -97,55 +90,54 @@ export default function ResultsPage() {
                 <DropdownMenuItem onClick={() => setFilter('all')}>All</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilter('spiral')}>Spiral</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilter('voice')}>Voice</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter('tapping')}>Tapping</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-          {loading || authLoading ? renderSkeleton() : 
-            filteredTests.length > 0 ? (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-[250px]">Test Type</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Risk Level</TableHead>
-                        <TableHead className="text-right">Overall Score</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredTests.map((test) => (
-                        <TableRow key={test.id} onClick={() => router.push(`/results/${test.id}`)} className="cursor-pointer">
-                            <TableCell className="font-medium">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-muted rounded-full">
-                                        <TestIcon type={test.testType} />
-                                    </div>
-                                    <span className="capitalize">{test.testType} Test</span>
-                                </div>
-                            </TableCell>
-                            <TableCell>{format(new Date(test.createdAt), 'PPP p')}</TableCell>
-                            <TableCell>
-                            <Badge className={getRiskClasses(test.riskLevel)} variant="outline">
-                                {test.riskLevel}
-                            </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-semibold">{test.overallScore.toFixed(1)} / 100</TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            ) : (
-                <div className="text-center p-16">
-                    <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold">No Tests Found</h3>
-                    <p className="text-muted-foreground mt-2">
-                        You have not completed any {filter !== 'all' ? filter : ''} tests yet.
-                    </p>
-                </div>
-            )
-          }
-      </div>
+      {loading || authLoading ? renderSkeleton() : 
+        filteredTests.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTests.map((test) => (
+                <Card key={test.id} className="flex flex-col hover:border-primary/50 transition-colors">
+                    <CardHeader className="flex flex-row items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                             <div className="p-3 bg-muted rounded-full">
+                                <TestIcon type={test.testType} />
+                            </div>
+                            <div>
+                                <CardTitle className="text-lg font-semibold capitalize">{test.testType} Test</CardTitle>
+                                <p className="text-sm text-muted-foreground">{format(new Date(test.createdAt), 'PPP')}</p>
+                            </div>
+                        </div>
+                         <Badge className={getRiskClasses(test.riskLevel)} variant="outline">
+                            {test.riskLevel}
+                        </Badge>
+                    </CardHeader>
+                    <CardContent className="flex-grow flex flex-col justify-end">
+                        <div className="flex items-end justify-between mb-4">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Score</p>
+                                <p className="text-4xl font-bold text-primary">{test.overallScore.toFixed(1)}</p>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => router.push(`/results/${test.id}`)}>
+                                View Report <ChevronRight className="w-4 h-4 ml-1" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+                ))}
+            </div>
+        ) : (
+            <div className="text-center p-16 bg-card rounded-lg border">
+                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold">No Tests Found</h3>
+                <p className="text-muted-foreground mt-2">
+                    You have not completed any {filter !== 'all' ? filter : ''} tests yet.
+                </p>
+            </div>
+        )
+      }
     </div>
   );
 }
