@@ -26,11 +26,8 @@ export default function ResultsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (authLoading) {
-      return; // Wait for authentication to resolve
-    }
-
-    if (appUser && appUser.email) {
+    // Only proceed to fetch data if auth is resolved and we have a user
+    if (!authLoading && appUser) {
       setIsLoading(true);
       getAllTests(appUser.email)
         .then((data) => {
@@ -38,13 +35,13 @@ export default function ResultsPage() {
         })
         .catch((error) => {
           console.error('Failed to fetch tests:', error);
-          setTests([]);
+          setTests([]); // Clear tests on error
         })
         .finally(() => {
-          setIsLoading(false);
+          setIsLoading(false); // Stop loading regardless of outcome
         });
-    } else {
-      // If not logged in, stop loading and clear tests
+    } else if (!authLoading && !appUser) {
+      // If auth is resolved and there's no user, stop loading.
       setIsLoading(false);
       setTests([]);
     }
@@ -79,9 +76,9 @@ export default function ResultsPage() {
           <TableRow>
             <TableHead>Test Type</TableHead>
             <TableHead>Date</TableHead>
-            <TableHead>Score</TableHead>
-            <TableHead>Risk Level</TableHead>
-            <TableHead></TableHead>
+            <TableHead className="text-center">Score</TableHead>
+            <TableHead className="text-center">Risk Level</TableHead>
+            <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -89,9 +86,9 @@ export default function ResultsPage() {
             <TableRow key={i}>
               <TableCell><Skeleton className="h-6 w-24" /></TableCell>
               <TableCell><Skeleton className="h-6 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-              <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-              <TableCell><Skeleton className="h-8 w-20" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-16 mx-auto" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-20 mx-auto" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -102,7 +99,7 @@ export default function ResultsPage() {
   return (
     <div className="p-4 md:p-8">
       <h1 className="text-3xl font-bold font-headline mb-8">All Test Results</h1>
-      {isLoading ? (
+      {(isLoading || authLoading) ? (
         renderSkeleton()
       ) : tests.length > 0 ? (
         <Card>
