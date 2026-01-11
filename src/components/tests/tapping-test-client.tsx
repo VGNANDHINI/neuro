@@ -43,6 +43,7 @@ export function TappingTestClient() {
     setTestState('running');
     setTimeLeft(TEST_DURATION);
     setTapCount(0);
+    setAnalysis(null);
   };
 
   const endTest = async () => {
