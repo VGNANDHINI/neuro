@@ -5,7 +5,7 @@ import './globals.css';
 import './print.css';
 
 export const metadata: Metadata = {
-  title: 'NeuroAI Health',
+  title: 'NeuroVita',
   description: 'AI-powered platform for early detection of neurological conditions.',
 };
 
