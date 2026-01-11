@@ -9,9 +9,6 @@ interface ReportLayoutProps {
   scoreCards: { label: string; value: number | string | undefined }[];
 }
 
-// This component uses inline styles extensively to ensure they are applied during printing,
-// as external CSS can sometimes be ignored by browser print engines.
-
 export function ReportLayout({ user, test, scoreCards }: ReportLayoutProps) {
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -26,14 +23,14 @@ export function ReportLayout({ user, test, scoreCards }: ReportLayoutProps) {
     }
   };
 
-  const testCategoryMap = {
+  const testCategoryMap: Record<string, string> = {
       spiral: 'Neurological Motor Assessment (Spiral)',
       voice: 'Vocal Biomarker Analysis (Voice)',
       tapping: 'Motor Function Assessment (Tapping)',
   }
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', color: '#000', backgroundColor: '#fff', fontSize: '11pt', lineHeight: '1.4' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', color: '#000', backgroundColor: '#fff', fontSize: '11pt', lineHeight: '1.4', paddingBottom: '1in' }}>
       {/* 1. HEADER */}
       <header style={{ textAlign: 'center', borderBottom: '2px solid #ccc', paddingBottom: '10px', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0' }}>NEUROAI HEALTH</h1>
@@ -128,7 +125,7 @@ export function ReportLayout({ user, test, scoreCards }: ReportLayoutProps) {
       </main>
 
       {/* 10. FOOTER */}
-      <footer style={{ position: 'fixed', bottom: '0', left: '0', right: '0', textAlign: 'center', borderTop: '1px solid #ccc', paddingTop: '10px', fontSize: '9pt', color: '#666' }}>
+      <footer className="report-footer" style={{ textAlign: 'center', borderTop: '1px solid #ccc', paddingTop: '10px', fontSize: '9pt', color: '#666' }}>
         <p style={{ margin: '0' }}>Confidential Medical Document – For authorized use only.</p>
         <p style={{ margin: '5px 0' }}>
             Disclaimer: NeuroAI Health is not a medical device and should not be used for diagnosis. This report is for informational purposes only. Always consult with a qualified healthcare professional.
