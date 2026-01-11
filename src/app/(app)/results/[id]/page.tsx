@@ -139,81 +139,83 @@ export default function ResultDetailPage() {
 
   return (
     <>
-    <div className="p-4 md:p-8 print:hidden">
-      <div className="flex items-center justify-between mb-8">
-        <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-        <Button onClick={() => window.print()}><Download className="mr-2 h-4 w-4" /> Export PDF</Button>
-      </div>
+      <div className="screen-only p-4 md:p-8">
+        <div className="flex items-center justify-between mb-8">
+          <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+          <Button onClick={() => window.print()}><Download className="mr-2 h-4 w-4" /> Export PDF</Button>
+        </div>
 
-      <Card className="mb-8">
-        <CardHeader className="flex flex-row items-start justify-between">
-          <div>
-            <div className="flex items-center gap-4 mb-2">
-                <div className="p-3 bg-primary/10 text-primary rounded-lg">{testIcons[test.testType]}</div>
-                <h1 className="text-3xl font-bold font-headline capitalize">{test.testType} Test Report</h1>
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-start justify-between">
+            <div>
+              <div className="flex items-center gap-4 mb-2">
+                  <div className="p-3 bg-primary/10 text-primary rounded-lg">{testIcons[test.testType]}</div>
+                  <h1 className="text-3xl font-bold font-headline capitalize">{test.testType} Test Report</h1>
+              </div>
+              <CardDescription>
+                Test taken on {format(new Date(test.createdAt), "MMMM d, yyyy 'at' h:mm a")}
+              </CardDescription>
             </div>
-            <CardDescription>
-              Test taken on {format(new Date(test.createdAt), "MMMM d, yyyy 'at' h:mm a")}
-            </CardDescription>
-          </div>
-           <Badge className={`px-4 py-2 text-md ${getRiskClasses(test.riskLevel)}`} variant="outline">
-              {test.riskLevel} Risk
-            </Badge>
-        </CardHeader>
-      </Card>
-      
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader><CardTitle>Score Breakdown</CardTitle></CardHeader>
-            <CardContent>
-                <div className="h-96">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                            <PolarGrid stroke="hsl(var(--border))" />
-                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 14 }} />
-                            <Radar name="Score" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
-                        </RadarChart>
-                    </ResponsiveContainer>
-                </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div>
-          <div className="space-y-6">
-            <Card>
-              <CardHeader><CardTitle>Overall Score</CardTitle></CardHeader>
-              <CardContent className="text-center">
-                 <p className="text-7xl font-bold font-headline text-primary">
-                    {test.overallScore.toFixed(1)}
-                  </p>
-                  <p className="text-muted-foreground">out of 100</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader><CardTitle>AI Recommendation</CardTitle></CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{test.recommendation}</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-       <Card className="mt-6">
-            <CardHeader><CardTitle>Detailed Metrics</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {scoreCards.map(metric => (
-                    <div key={metric.label} className="p-4 bg-muted/50 rounded-lg">
-                        <p className="text-sm text-muted-foreground">{metric.label}</p>
-                        <p className="text-2xl font-semibold">{metric.value}</p>
-                    </div>
-                ))}
-            </CardContent>
+            <Badge className={`px-4 py-2 text-md ${getRiskClasses(test.riskLevel)}`} variant="outline">
+                {test.riskLevel} Risk
+              </Badge>
+          </CardHeader>
         </Card>
-    </div>
-    <div className="hidden print:block">
-        <ReportLayout user={appUser} test={test} chartData={chartData} scoreCards={scoreCards} />
-    </div>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader><CardTitle>Score Breakdown</CardTitle></CardHeader>
+              <CardContent>
+                  <div className="h-96">
+                      <ResponsiveContainer width="100%" height="100%">
+                          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+                              <PolarGrid stroke="hsl(var(--border))" />
+                              <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 14 }} />
+                              <Radar name="Score" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
+                          </RadarChart>
+                      </ResponsiveContainer>
+                  </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader><CardTitle>Overall Score</CardTitle></CardHeader>
+                <CardContent className="text-center">
+                  <p className="text-7xl font-bold font-headline text-primary">
+                      {test.overallScore.toFixed(1)}
+                    </p>
+                    <p className="text-muted-foreground">out of 100</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>AI Recommendation</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">{test.recommendation}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+        <Card className="mt-6">
+              <CardHeader><CardTitle>Detailed Metrics</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {scoreCards.map(metric => (
+                      <div key={metric.label} className="p-4 bg-muted/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">{metric.label}</p>
+                          <p className="text-2xl font-semibold">{metric.value}</p>
+                      </div>
+                  ))}
+              </CardContent>
+          </Card>
+      </div>
+      <div className="print-this">
+          <ReportLayout user={appUser} test={test} chartData={chartData} scoreCards={scoreCards} />
+      </div>
     </>
   );
 }
+
+    

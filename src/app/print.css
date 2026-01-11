@@ -4,39 +4,36 @@
     print-color-adjust: exact !important;
     background-color: #fff !important;
     color: #000 !important;
-    font-family: Arial, sans-serif;
+    font-family: 'Times New Roman', Times, serif;
     font-size: 11pt;
     margin: 0;
     padding: 0;
   }
 
   /* Hide everything by default */
-  body > *, body > div:not(.print-block) {
+  .screen-only {
     display: none !important;
   }
   
-  /* Only show the print-block container and its contents */
-  .print-block {
+  /* Only show the print container and its contents */
+  .print-this {
     display: block !important;
-  }
-
-  /* Hide the web UI that might still be lingering */
-  .print-hidden, header, nav, aside, footer:not(.report-footer) {
-    display: none !important;
   }
   
   @page {
     size: A4;
-    margin: 1in; /* Standard margin */
+    margin: 1in;
   }
 
-  /* Ensure the footer in the report layout is handled correctly */
-  footer {
+  .report-footer {
     position: fixed;
     bottom: 0.5in;
     left: 1in;
     right: 1in;
     font-size: 9pt;
     text-align: center;
+    color: #666;
   }
 }
+
+    
