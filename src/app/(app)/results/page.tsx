@@ -14,23 +14,32 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function ResultsPage() {
   const { appUser, loading: authLoading } = useAuth();
   const [tests, setTests] = useState<TestResult[]>([]);
-  const [pageLoading, setPageLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Only fetch tests if auth is finished and we have a user
-    if (!authLoading && appUser) {
-      setPageLoading(true);
+    // Wait until authentication is resolved
+    if (authLoading) {
+      return;
+    }
+
+    if (appUser) {
+      setIsLoading(true);
       getAllTests(appUser.id)
         .then((data) => {
           setTests(data);
         })
+        .catch((error) => {
+          console.error("Failed to fetch tests:", error);
+          setTests([]); // Clear tests on error
+        })
         .finally(() => {
-          setPageLoading(false);
+          setIsLoading(false);
         });
-    } else if (!authLoading && !appUser) {
-      // If auth is done and there's no user, stop loading.
-      setPageLoading(false);
+    } else {
+      // Not logged in, so no tests to show and not loading
+      setIsLoading(false);
+      setTests([]);
     }
   }, [appUser, authLoading]);
 
@@ -86,7 +95,7 @@ export default function ResultsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      {pageLoading ? (
+      {isLoading ? (
         renderSkeleton()
       ) : tests.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
