@@ -3,10 +3,9 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Play, RotateCcw, Download, CheckCircle, Loader2 } from 'lucide-react';
+import { Play, RotateCcw, CheckCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { analyzeAndSaveSpiralTest } from '@/lib/actions/data';
-import { Progress } from '@/components/ui/progress';
 import {
   Radar,
   RadarChart,
@@ -140,15 +139,13 @@ export function SpiralTestClient() {
     setIsDrawing(false);
     if (points.length > 50) {
       setTestState('analyzing');
-      if (appUser) {
-        const result = await analyzeAndSaveSpiralTest(points);
-        if ('error' in result) {
-            // handle error
-            setTestState('idle');
-        } else {
-            setAnalysis(result);
-            setTestState('results');
-        }
+      const result = await analyzeAndSaveSpiralTest(points);
+      if ('error' in result) {
+          // handle error
+          setTestState('idle');
+      } else {
+          setAnalysis(result);
+          setTestState('results');
       }
     }
   };
