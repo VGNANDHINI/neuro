@@ -10,14 +10,14 @@ import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Activity, ChevronDown, Filter, Mic, Hand, FileText } from 'lucide-react';
+import { Activity, ChevronDown, Filter, Mic, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ResultsPage() {
   const { appUser, loading: authLoading } = useAuth();
   const [tests, setTests] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'spiral' | 'voice' | 'tapping'>('all');
+  const [filter, setFilter] = useState<'all' | 'spiral' | 'voice'>('all');
   const router = useRouter();
 
   useEffect(() => {
@@ -48,7 +48,6 @@ export default function ResultsPage() {
     const icons = {
         spiral: <Activity className="h-5 w-5 text-primary" />,
         voice: <Mic className="h-5 w-5 text-primary" />,
-        tapping: <Hand className="h-5 w-5 text-primary" />,
     };
     return icons[type] || null;
   }
@@ -95,7 +94,6 @@ export default function ResultsPage() {
                 <DropdownMenuItem onClick={() => setFilter('all')}>All</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilter('spiral')}>Spiral</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilter('voice')}>Voice</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilter('tapping')}>Tapping</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
       </div>
