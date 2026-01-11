@@ -65,7 +65,7 @@ export async function analyzeAndSaveSpiralTest(userId: string, points: { x: numb
     const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
       userId,
       testType: 'spiral',
-      testData: JSON.stringify(points), // Storing points might be large, consider summarizing
+      testData: JSON.stringify(points),
       tremorScore: validatedResult.tremorScore,
       smoothnessScore: validatedResult.smoothnessScore,
       speedScore: validatedResult.speedScore,
@@ -101,8 +101,6 @@ export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: stri
       const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
         userId,
         testType: 'voice',
-        // Storing the full data URI in Firestore is not recommended.
-        // In a real app, upload this to Firebase Storage and store the URL.
         testData: audioDataUri.substring(0, 50) + '...', 
         pitchScore: validatedResult.pitch_score,
         volumeScore: validatedResult.volume_score,
@@ -167,6 +165,7 @@ export async function analyzeAndSaveTappingTest(userId: string, tapTimestamps: n
 export async function getDashboardStats(userId: string) {
   if (!userId) return null;
   
+  // IMPORTANT: This query requires a composite index in Firestore.
   const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
   const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
@@ -197,6 +196,7 @@ export async function getDashboardStats(userId: string) {
 export async function getAllTests(userId: string): Promise<TestResult[]> {
   if (!userId) return [];
   
+  // IMPORTANT: This query requires a composite index in Firestore.
   const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
   return testsSnapshot.docs.map(doc => {
