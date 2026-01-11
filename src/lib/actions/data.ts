@@ -19,7 +19,12 @@ import { db } from '@/lib/firebase';
 import type { AppUser, TestResult } from '@/lib/types';
 import { analyzeSpiralDrawing } from '@/ai/flows/analyze-spiral-drawing';
 import { analyzeVoiceRecording } from '@/ai/flows/analyze-voice-recording';
-import { AnalyzeSpiralDrawingOutputSchema, AnalyzeVoiceRecordingOutputSchema } from '@/lib/types';
+import { analyzeTappingPatterns } from '@/ai/flows/analyze-tapping-patterns';
+import { 
+    AnalyzeSpiralDrawingOutputSchema, 
+    AnalyzeVoiceRecordingOutputSchema,
+    AnalyzeTappingPatternsOutputSchema,
+} from '@/lib/types';
 
 // USER DATA
 export async function getAppUser(userId: string): Promise<AppUser | null> {
@@ -50,6 +55,7 @@ export async function analyzeAndSaveSpiralTest(userId: string, points: { x: numb
   try {
     const result = await analyzeSpiralDrawing({ points: JSON.stringify(points) });
     const validation = AnalyzeSpiralDrawingOutputSchema.safeParse(result);
+
     if (!validation.success) {
       console.error('Invalid AI response for spiral test:', validation.error);
       throw new Error('Invalid AI response format.');
@@ -118,6 +124,44 @@ export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: stri
     }
 }
 
+export async function analyzeAndSaveTappingTest(userId: string, tapTimestamps: number[], duration: number) {
+    if (!userId) return { error: 'Authentication required.' };
+    
+    try {
+      const result = await analyzeTappingPatterns({ tapTimestamps, duration });
+      const validation = AnalyzeTappingPatternsOutputSchema.safeParse(result);
+      if (!validation.success) {
+        console.error('Invalid AI response for tapping test:', validation.error);
+        throw new Error('Invalid AI response format.');
+      }
+      const validatedResult = validation.data;
+      
+      const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
+        userId,
+        testType: 'tapping',
+        testData: JSON.stringify({ tapCount: validatedResult.tapCount, duration }),
+        tapCount: validatedResult.tapCount,
+        tapsPerSecond: validatedResult.tapsPerSecond,
+        speedScore: validatedResult.speedScore,
+        consistencyScore: validatedResult.consistencyScore,
+        rhythmScore: validatedResult.rhythmScore,
+        fatigueScore: validatedResult.fatigueScore,
+        overallScore: validatedResult.overallScore,
+        riskLevel: validatedResult.riskLevel as 'Low' | 'Moderate' | 'High',
+        recommendation: validatedResult.recommendation,
+      };
+  
+      const docRef = await addDoc(collection(db, 'tests'), {
+        ...testResult,
+        createdAt: serverTimestamp(),
+      });
+      return { id: docRef.id, ...validatedResult };
+    } catch (error) {
+      console.error('Tapping test analysis failed:', error);
+      return { error: 'Analysis failed.' };
+    }
+}
+
 
 // DATA FETCHING
 export async function getDashboardStats(userId: string) {
@@ -135,6 +179,7 @@ export async function getDashboardStats(userId: string) {
   const testsByType = {
     spiral: tests.filter(t => t.testType === 'spiral').length,
     voice: tests.filter(t => t.testType === 'voice').length,
+    tapping: tests.filter(t => t.testType === 'tapping').length,
   };
   
   const latestTest = tests[0] ?? null;
@@ -196,7 +241,6 @@ export async function getProgressData(userId: string, timeframe: string) {
   const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
   
   // Group by date and average scores if multiple tests on same day
-  const dailyAverages: { [key: string]: { date: string, spiral?: number, voice?: number } } = {};
   const dailySums: { [key: string]: { [key: string]: { sum: number, count: number } } } = {};
 
   tests.forEach(test => {
@@ -211,7 +255,8 @@ export async function getProgressData(userId: string, timeframe: string) {
     dailySums[dateKey][test.testType].sum += test.overallScore;
     dailySums[dateKey][test.testType].count += 1;
   });
-
+  
+  const dailyAverages: { [key: string]: { date: string, spiral?: number, voice?: number, tapping?: number } } = {};
   Object.keys(dailySums).forEach(dateKey => {
       dailyAverages[dateKey] = { date: dateKey };
       Object.keys(dailySums[dateKey]).forEach(testType => {

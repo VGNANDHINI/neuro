@@ -11,27 +11,36 @@ export type AppUser = {
   location?: string;
   createdAt: Timestamp;
   lastLogin?: Timestamp;
+  photoURL?: string;
 };
 
 export type TestResult = {
   id: string;
   userId: string;
-  testType: 'spiral' | 'voice';
+  testType: 'spiral' | 'voice' | 'tapping';
   testData: string; // JSON string of test raw data
   
-  // Scores
-  tremorScore?: number;
-  smoothnessScore?: number;
-  speedScore?: number;
-  consistencyScore?: number;
+  // Common Scores
   overallScore: number;
   riskLevel: 'Low' | 'Moderate' | 'High';
   recommendation?: string;
+  
+  // Spiral specific
+  tremorScore?: number;
+  smoothnessScore?: number;
   
   // Voice specific
   pitchScore?: number;
   volumeScore?: number;
   clarityScore?: number;
+  
+  // Tapping specific
+  tapCount?: number;
+  tapsPerSecond?: number;
+  speedScore?: number;
+  consistencyScore?: number;
+  rhythmScore?: number;
+  fatigueScore?: number;
   
   createdAt: Timestamp;
 };
@@ -90,3 +99,23 @@ export const AnalyzeVoiceRecordingOutputSchema = z.object({
   recommendation: z.string().describe('A recommendation based on the risk level.'),
 });
 export type AnalyzeVoiceRecordingOutput = z.infer<typeof AnalyzeVoiceRecordingOutputSchema>;
+
+// Tapping Test
+export const AnalyzeTappingPatternsInputSchema = z.object({
+  tapTimestamps: z.array(z.number()).describe('An array of tap timestamps in milliseconds.'),
+  duration: z.number().describe('The total duration of the test in seconds.'),
+});
+export type AnalyzeTappingPatternsInput = z.infer<typeof AnalyzeTappingPatternsInputSchema>;
+
+export const AnalyzeTappingPatternsOutputSchema = z.object({
+    tapCount: z.number().describe('Total number of taps recorded.'),
+    tapsPerSecond: z.number().describe('Average number of taps per second.'),
+    speedScore: z.number().describe('Score based on the tapping speed (0-100).'),
+    consistencyScore: z.number().describe('Score based on the consistency of inter-tap intervals (0-100).'),
+    rhythmScore: z.number().describe('Score based on the rhythmic regularity of taps (0-100).'),
+    fatigueScore: z.number().describe('Score indicating resistance to fatigue during the test (0-100).'),
+    overallScore: z.number().describe('A weighted overall score of motor performance (0-100).'),
+    riskLevel: z.enum(['Low', 'Moderate', 'High']).describe('The assessed risk level.'),
+    recommendation: z.string().describe('A textual recommendation for the user based on the results.'),
+});
+export type AnalyzeTappingPatternsOutput = z.infer<typeof AnalyzeTappingPatternsOutputSchema>;

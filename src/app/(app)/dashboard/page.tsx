@@ -68,7 +68,8 @@ function DashboardContent() {
              <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                     <Skeleton className="h-8 w-48 mb-4" />
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        <Skeleton className="h-36 w-full" />
                         <Skeleton className="h-36 w-full" />
                         <Skeleton className="h-36 w-full" />
                     </div>
@@ -123,10 +124,11 @@ function DashboardContent() {
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                     <h2 className="text-xl font-bold font-headline mb-4">Start a New Test</h2>
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-3 gap-4">
                         {[
                             { id: 'spiral', icon: Activity, title: 'Spiral Test' },
                             { id: 'voice', icon: Mic, title: 'Voice Test' },
+                            { id: 'tapping', icon: Hand, title: 'Tapping Test' },
                         ].map((action) => (
                             <Link href={`/tests/${action.id}`} key={action.id} className="group">
                                 <Card className="h-full hover:border-primary transition-colors">
@@ -159,7 +161,7 @@ function DashboardContent() {
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <div className="bg-primary/10 p-2 rounded-full">
-                                                    {test.testType === 'spiral' ? <Activity className="h-5 w-5 text-primary" /> : <Mic className="h-5 w-5 text-primary" />}
+                                                    {test.testType === 'spiral' ? <Activity className="h-5 w-5 text-primary" /> : test.testType === 'voice' ? <Mic className="h-5 w-5 text-primary" /> : <Hand className="h-5 w-5 text-primary" />}
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold capitalize">{test.testType} Test</p>

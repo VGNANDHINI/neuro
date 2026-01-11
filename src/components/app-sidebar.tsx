@@ -44,6 +44,7 @@ const navItems: NavItem[] = [
   { id: 'progress', href: '/progress', icon: BarChart3, label: 'Progress', group: 'main' },
   { id: 'spiral-test', href: '/tests/spiral', icon: Activity, label: 'Spiral Test', group: 'tests' },
   { id: 'voice-test', href: '/tests/voice', icon: Mic, label: 'Voice Test', group: 'tests' },
+  { id: 'tapping-test', href: '/tests/tapping', icon: Hand, label: 'Tapping Test', group: 'tests' },
 ];
 
 export function AppSidebar({
