@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getAllTests } from '@/lib/actions/data';
 import type { TestResult } from '@/lib/types';
@@ -7,14 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Activity, ChevronDown, Filter, Mic, FileText, ChevronRight, Hand } from 'lucide-react';
+import { Activity, Mic, FileText, ChevronRight, Hand } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ResultsPage() {
