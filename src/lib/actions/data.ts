@@ -165,7 +165,6 @@ export async function analyzeAndSaveTappingTest(userId: string, tapTimestamps: n
 export async function getDashboardStats(userId: string) {
   if (!userId) return null;
   
-  // IMPORTANT: This query requires a composite index in Firestore.
   const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
   const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
@@ -196,7 +195,6 @@ export async function getDashboardStats(userId: string) {
 export async function getAllTests(userId: string): Promise<TestResult[]> {
   if (!userId) return [];
   
-  // IMPORTANT: This query requires a composite index in Firestore.
   const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
   return testsSnapshot.docs.map(doc => {
@@ -224,9 +222,6 @@ export async function getTestDetails(userId: string, testId: string): Promise<Te
 export async function getProgressData(userId: string, timeframe: string) {
   if (!userId) return null;
   
-  // IMPORTANT: The following queries require a composite index in Firestore.
-  // Go to your Firebase console -> Firestore -> Indexes and create a composite index for
-  // the 'tests' collection with the fields: `userId` (Ascending) and `createdAt` (Ascending).
   const days = parseInt(timeframe, 10);
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -240,7 +235,6 @@ export async function getProgressData(userId: string, timeframe: string) {
   const testsSnapshot = await getDocs(testsQuery);
   const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
   
-  // Group by date and average scores if multiple tests on same day
   const dailySums: { [key: string]: { [key: string]: { sum: number, count: number } } } = {};
 
   tests.forEach(test => {
@@ -256,16 +250,17 @@ export async function getProgressData(userId: string, timeframe: string) {
     dailySums[dateKey][test.testType].count += 1;
   });
   
-  const dailyAverages: { [key: string]: { date: string, spiral?: number, voice?: number, tapping?: number } } = {};
+  const dailyAverages: { date: string, spiral?: number, voice?: number, tapping?: number }[] = [];
   Object.keys(dailySums).forEach(dateKey => {
-      dailyAverages[dateKey] = { date: dateKey };
+      const dayData: { date: string, spiral?: number, voice?: number, tapping?: number } = { date: dateKey };
       Object.keys(dailySums[dateKey]).forEach(testType => {
           const { sum, count } = dailySums[dateKey][testType];
-          dailyAverages[dateKey][testType] = sum / count;
+          dayData[testType] = sum / count;
       });
+      dailyAverages.push(dayData)
   });
 
-  const formattedProgress = Object.values(dailyAverages).map(day => ({
+  const formattedProgress = dailyAverages.map(day => ({
     ...day,
     date: new Date(day.date).toLocaleString('en-US', { month: 'short', day: 'numeric' }),
   }));
@@ -285,7 +280,6 @@ export async function getProgressData(userId: string, timeframe: string) {
   const previousScores = previousSnapshot.docs.map(doc => doc.data().overallScore as number);
   const previousAverage = previousScores.length > 0 ? previousScores.reduce((a,b) => a+b, 0) / previousScores.length : 0;
   const trend = previousAverage > 0 ? ((average - previousAverage) / previousAverage) * 100 : (average > 0 ? 100 : 0);
-
 
   return {
     progress: formattedProgress,
