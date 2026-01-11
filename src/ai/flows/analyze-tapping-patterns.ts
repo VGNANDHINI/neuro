@@ -97,17 +97,17 @@ const analyzeTappingPatternsFlow = ai.defineFlow(
   },
   async ({ tapTimestamps, duration }) => {
     
-    if (tapTimestamps.length < 2) {
+    if (tapTimestamps.length < 25) {
         return {
-            tapCount: 0,
-            tapsPerSecond: 0,
+            tapCount: tapTimestamps.length,
+            tapsPerSecond: tapTimestamps.length / duration,
             speedScore: 0,
             consistencyScore: 0,
             rhythmScore: 0,
             fatigueScore: 0,
             overallScore: 0,
             riskLevel: 'Low',
-            recommendation: 'Not enough tapping data for a complete analysis.'
+            recommendation: 'Not enough tapping data for a complete analysis. Please try to tap more consistently for the full duration.'
         };
     }
     
