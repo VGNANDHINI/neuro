@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 
 export default function ResultDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { appUser } = useAuth();
   const [test, setTest] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,13 +27,13 @@ export default function ResultDetailPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     if (appUser) {
-      getTestDetails(appUser.id, params.id).then((data) => {
+      getTestDetails(appUser.id, id).then((data) => {
         // The server action already ensures the user owns the test
         setTest(data);
         setLoading(false);
       });
     }
-  }, [appUser, params.id]);
+  }, [appUser, id]);
 
   if (loading) {
     return (
