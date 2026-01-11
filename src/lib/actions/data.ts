@@ -170,7 +170,7 @@ export async function getDashboardStats(userId: string) {
   const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
 
   const totalTests = tests.length;
-  const recentTests = tests.slice(0, 5).map(t => ({...t, createdAt: (t.createdAt as any).toDate().toISOString()}));
+  const recentTests = tests.slice(0, 5).map(t => ({...t, createdAt: (t.createdAt as unknown as Timestamp).toDate().toISOString()}));
   const allScores = tests.map(t => t.overallScore);
   const averageScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
   
@@ -198,8 +198,12 @@ export async function getAllTests(userId: string): Promise<TestResult[]> {
   const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
   return testsSnapshot.docs.map(doc => {
-      const data = doc.data() as TestResult;
-      return { ...data, id: doc.id, createdAt: (data.createdAt as any).toDate().toISOString() } as TestResult;
+      const data = doc.data();
+      return { 
+          ...data, 
+          id: doc.id, 
+          createdAt: (data.createdAt as Timestamp).toDate().toISOString() 
+      } as TestResult;
   });
 }
 
@@ -216,7 +220,7 @@ export async function getTestDetails(userId: string, testId: string): Promise<Te
     return null; // Don't allow access to other users' tests
   }
 
-  return { ...testData, id: testDoc.id, createdAt: (testData.createdAt as any).toDate().toISOString() } as TestResult;
+  return { ...testData, id: testDoc.id, createdAt: (testData.createdAt as unknown as Timestamp).toDate().toISOString() } as TestResult;
 }
 
 export async function getProgressData(userId: string, timeframe: string) {
@@ -238,7 +242,7 @@ export async function getProgressData(userId: string, timeframe: string) {
     const dailyAverages: { [key: string]: { [key: string]: { sum: number; count: number } } } = {};
 
     tests.forEach(test => {
-        const dateKey = (test.createdAt as any).toDate().toISOString().split('T')[0];
+        const dateKey = (test.createdAt as unknown as Timestamp).toDate().toISOString().split('T')[0];
         if (!dailyAverages[dateKey]) {
             dailyAverages[dateKey] = {};
         }

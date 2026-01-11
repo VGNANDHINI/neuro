@@ -42,7 +42,7 @@ export type TestResult = {
   rhythmScore?: number;
   fatigueScore?: number;
   
-  createdAt: Timestamp;
+  createdAt: string; // Changed from Timestamp to string for client-side compatibility
 };
 
 // AI Flow Schemas
