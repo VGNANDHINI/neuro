@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Activity, ChevronDown, Filter, Mic, FileText, ChevronRight } from 'lucide-react';
+import { Activity, ChevronDown, Filter, Mic, FileText, ChevronRight, Hand } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ResultsPage() {
@@ -27,6 +27,7 @@ export default function ResultsPage() {
         setLoading(false);
       });
     } else if (!authLoading) {
+      // If auth is done loading and there's no user, stop the page loading.
       setLoading(false);
     }
   }, [appUser, authLoading]);
