@@ -1,6 +1,5 @@
 'use client';
 
-import { getDashboardStats } from '@/lib/actions/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   CheckCircle,
@@ -16,9 +15,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
 import * as React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
     return (
@@ -33,64 +30,19 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-    const { appUser, loading } = useAuth();
-    const [stats, setStats] = React.useState<any>(null);
-    const [dataLoading, setDataLoading] = React.useState(true);
+    const fakeStats = {
+      totalTests: 12,
+      averageScore: 82.4,
+      currentRisk: 'Low',
+      recentTests: [
+        { id: '1', testType: 'spiral', createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), riskLevel: 'Low' },
+        { id: '2', testType: 'voice', createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), riskLevel: 'Low' },
+        { id: '3', testType: 'tapping', createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), riskLevel: 'Moderate' },
+        { id: '4', testType: 'spiral', createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), riskLevel: 'Low' },
+      ],
+    };
 
-    React.useEffect(() => {
-        // We only fetch data once we have an appUser
-        if (appUser) {
-            setDataLoading(true);
-            getDashboardStats(appUser.id).then(data => {
-                setStats(data);
-                setDataLoading(false);
-            });
-        } else if (!loading) {
-            // If not loading and still no appUser, stop loading data.
-            setDataLoading(false);
-        }
-    }, [appUser, loading]);
-
-    if (loading || dataLoading) {
-        return (
-            <>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {[...Array(3)].map((_, i) => (
-                     <Card key={i}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                           <Skeleton className="h-5 w-24" />
-                           <Skeleton className="h-5 w-5" />
-                        </CardHeader>
-                        <CardContent><Skeleton className="h-8 w-20" /></CardContent>
-                    </Card>
-                ))}
-            </div>
-             <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <Skeleton className="h-8 w-48 mb-4" />
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                        <Skeleton className="h-36 w-full" />
-                        <Skeleton className="h-36 w-full" />
-                        <Skeleton className="h-36 w-full" />
-                    </div>
-                </div>
-                <div>
-                    <Skeleton className="h-8 w-48 mb-4" />
-                    <Card><CardContent className="p-4 space-y-4"><Skeleton className="h-32 w-full" /></CardContent></Card>
-                </div>
-            </div>
-            </>
-        );
-    }
-    
-    if (!stats) {
-        return (
-             <div className="text-center text-muted-foreground p-8">
-                <FileText className="mx-auto h-8 w-8 mb-2" />
-                <p>Could not load dashboard data.</p>
-            </div>
-        )
-    }
+    const stats = fakeStats;
     
     const quickStats = [
         { label: 'Total Tests', value: stats.totalTests, icon: CheckCircle, color: 'text-green-400' },
@@ -98,7 +50,7 @@ function DashboardContent() {
         { label: 'Current Risk', value: stats.currentRisk, icon: Shield, color: stats.currentRisk === 'Low' ? 'text-green-400' : stats.currentRisk === 'Moderate' ? 'text-yellow-400' : 'text-red-400' },
     ];
 
-    const riskColorClass = {
+    const riskColorClass: { [key: string]: string } = {
         Low: 'bg-green-500/20 text-green-400 border-green-500/30',
         Moderate: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
         High: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -109,13 +61,19 @@ function DashboardContent() {
         <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {quickStats.map((stat, i) => (
-                    <Card key={i}>
+                    <Card key={i} className="hover:border-primary/50 transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
                             <stat.icon className={`h-5 w-5 ${stat.color}`} />
                         </CardHeader>
                         <CardContent>
-                            <div className={`text-2xl font-bold ${stat.label === 'Current Risk' ? riskColorClass[stat.value] : ''} inline-block p-1 rounded`}>{stat.value}</div>
+                           {stat.label === 'Total Tests' ? (
+                                <Link href="/results">
+                                    <div className={`text-2xl font-bold`}>{stat.value}</div>
+                                </Link>
+                           ) : (
+                             <div className={`text-2xl font-bold ${stat.label === 'Current Risk' ? riskColorClass[stat.value] : ''} inline-block p-1 rounded`}>{stat.value}</div>
+                           )}
                         </CardContent>
                     </Card>
                 ))}
