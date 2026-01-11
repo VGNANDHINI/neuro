@@ -195,10 +195,10 @@ export async function getDashboardStats(userId: string) {
   };
 }
 
-export async function getAllTests(userEmail: string): Promise<TestResult[]> {
-  if (!userEmail) return [];
+export async function getAllTests(userId: string): Promise<TestResult[]> {
+  if (!userId) return [];
   
-  const testsQuery = query(collection(db, 'tests'), where('userEmail', '==', userEmail), orderBy('createdAt', 'desc'));
+  const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
   return testsSnapshot.docs.map(doc => {
       const data = doc.data();
