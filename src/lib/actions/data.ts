@@ -19,9 +19,28 @@ import type { AppUser, TestResult } from '@/lib/types';
 import { analyzeSpiralDrawing } from '@/ai/flows/analyze-spiral-drawing';
 import { analyzeVoiceRecording } from '@/ai/flows/analyze-voice-recording';
 import { analyzeTapping } from '@/ai/flows/analyze-tapping-patterns';
+import { auth } from 'firebase-admin';
+import { headers } from 'next/headers';
+
+async function getUserIdFromSession(): Promise<string | null> {
+    try {
+        const authHeader = headers().get('Authorization');
+        if (!authHeader) return null;
+        const idToken = authHeader.split('Bearer ')[1];
+        const decodedToken = await auth().verifyIdToken(idToken);
+        return decodedToken.uid;
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return null;
+    }
+}
+
 
 // USER DATA
-export async function getAppUser(userId: string): Promise<AppUser | null> {
+export async function getAppUser(): Promise<AppUser | null> {
+  const userId = await getUserIdFromSession();
+  if (!userId) return null;
+
   const userDoc = await getDoc(doc(db, 'users', userId));
   if (userDoc.exists()) {
     return { id: userDoc.id, ...userDoc.data() } as AppUser;
@@ -29,7 +48,10 @@ export async function getAppUser(userId: string): Promise<AppUser | null> {
   return null;
 }
 
-export async function updateUserProfile(userId: string, data: Partial<AppUser>) {
+export async function updateUserProfile(data: Partial<AppUser>) {
+  const userId = await getUserIdFromSession();
+  if (!userId) return { error: 'Authentication required.' };
+  
   try {
     await updateDoc(doc(db, 'users', userId), data);
     return { success: 'Profile updated successfully.' };
@@ -39,7 +61,10 @@ export async function updateUserProfile(userId: string, data: Partial<AppUser>) 
 }
 
 // TEST ANALYSIS AND STORAGE
-export async function analyzeAndSaveSpiralTest(userId: string, points: { x: number; y: number; timestamp: number }[]) {
+export async function analyzeAndSaveSpiralTest(points: { x: number; y: number; timestamp: number }[]) {
+  const userId = await getUserIdFromSession();
+  if (!userId) return { error: 'Authentication required.' };
+  
   try {
     const result = await analyzeSpiralDrawing({ points: JSON.stringify(points) });
     
@@ -65,7 +90,10 @@ export async function analyzeAndSaveSpiralTest(userId: string, points: { x: numb
   }
 }
 
-export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: string) {
+export async function analyzeAndSaveVoiceTest(audioDataUri: string) {
+    const userId = await getUserIdFromSession();
+    if (!userId) return { error: 'Authentication required.' };
+    
     try {
       const result = await analyzeVoiceRecording({ audioDataUri });
       
@@ -91,7 +119,10 @@ export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: stri
     }
 }
 
-export async function analyzeAndSaveTappingTest(userId: string, tapCount: number, duration: number) {
+export async function analyzeAndSaveTappingTest(tapCount: number, duration: number) {
+    const userId = await getUserIdFromSession();
+    if (!userId) return { error: 'Authentication required.' };
+
     try {
       const result = await analyzeTapping({ tapCount, duration });
   
@@ -120,13 +151,16 @@ export async function analyzeAndSaveTappingTest(userId: string, tapCount: number
 
 
 // DATA FETCHING
-export async function getDashboardStats(userId: string) {
+export async function getDashboardStats() {
+  const userId = await getUserIdFromSession();
+  if (!userId) return null;
+  
   const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
   const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
 
   const totalTests = tests.length;
-  const recentTests = tests.slice(0, 5);
+  const recentTests = tests.slice(0, 5).map(t => ({...t, createdAt: (t.createdAt as any).toDate().toISOString()}));
   const allScores = tests.map(t => t.overallScore);
   const averageScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
   
@@ -148,52 +182,97 @@ export async function getDashboardStats(userId: string) {
   };
 }
 
-export async function getAllTests(userId: string) {
+export async function getAllTests(): Promise<TestResult[]> {
+  const userId = await getUserIdFromSession();
+  if (!userId) return [];
+  
   const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const testsSnapshot = await getDocs(testsQuery);
-  return testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
+  return testsSnapshot.docs.map(doc => {
+      const data = doc.data() as TestResult;
+      return { ...data, id: doc.id, createdAt: (data.createdAt as any).toDate().toISOString() } as TestResult;
+  });
 }
 
-export async function getTestDetails(testId: string) {
+export async function getTestDetails(testId: string): Promise<TestResult | null> {
+  const userId = await getUserIdFromSession();
+  if (!userId) return null;
+
   const testDoc = await getDoc(doc(db, 'tests', testId));
   if (!testDoc.exists()) {
     return null;
   }
-  return { id: testDoc.id, ...testDoc.data() } as TestResult;
+  const testData = testDoc.data() as TestResult;
+
+  if (testData.userId !== userId) {
+    return null; // Don't allow access to other users' tests
+  }
+
+  return { ...testData, id: testDoc.id, createdAt: (testData.createdAt as any).toDate().toISOString() } as TestResult;
 }
 
-export async function getProgressData(userId: string) {
-  const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'asc'));
+export async function getProgressData(timeframe: string) {
+  const userId = await getUserIdFromSession();
+  if (!userId) return null;
+  
+  const days = parseInt(timeframe, 10);
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const testsQuery = query(
+      collection(db, 'tests'), 
+      where('userId', '==', userId),
+      where('createdAt', '>=', startDate), 
+      orderBy('createdAt', 'asc')
+  );
   const testsSnapshot = await getDocs(testsQuery);
   const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
   
-  const progress = tests.map(test => ({
-    date: (test.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    overallScore: test.overallScore,
-    testType: test.testType,
-  }));
-  
   // Group by date and average scores if multiple tests on same day
-  const dailyProgress: { [key: string]: { date: string; spiral?: number; voice?: number; tapping?: number } } = {};
+  const dailyProgress: { [key: string]: { date: string; spiral?: number; voice?: number; tapping?: number, count: number } } = {};
 
   tests.forEach(test => {
-    const dateKey = test.createdAt.toDate().toISOString().split('T')[0];
+    const dateKey = (test.createdAt as any).toDate().toISOString().split('T')[0];
     if (!dailyProgress[dateKey]) {
-      dailyProgress[dateKey] = { date: dateKey };
+      dailyProgress[dateKey] = { date: dateKey, count: 0 };
     }
-    dailyProgress[dateKey][test.testType] = test.overallScore;
+    
+    if (!dailyProgress[dateKey][test.testType]) {
+        dailyProgress[dateKey][test.testType] = test.overallScore;
+    } else {
+        // Average if multiple tests of the same type on the same day
+        dailyProgress[dateKey][test.testType] = (dailyProgress[dateKey][test.testType] + test.overallScore) / 2;
+    }
   });
 
   const formattedProgress = Object.values(dailyProgress).map(day => ({
     ...day,
     date: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-  })).slice(-30); // Last 30 days of tests
+  }));
+
+  const allScores = tests.map(t => t.overallScore);
+  const average = allScores.length > 0 ? allScores.reduce((acc, t) => acc + t, 0) / allScores.length : 0;
+  
+  const previousPeriodStartDate = new Date();
+  previousPeriodStartDate.setDate(previousPeriodStartDate.getDate() - days * 2);
+  const previousPeriodQuery = query(
+      collection(db, 'tests'),
+      where('userId', '==', userId),
+      where('createdAt', '>=', previousPeriodStartDate),
+      where('createdAt', '<', startDate)
+  );
+  const previousSnapshot = await getDocs(previousPeriodQuery);
+  const previousScores = previousSnapshot.docs.map(doc => doc.data().overallScore as number);
+  const previousAverage = previousScores.length > 0 ? previousScores.reduce((a,b) => a+b, 0) / previousScores.length : 0;
+  const trend = previousAverage > 0 ? ((average - previousAverage) / previousAverage) * 100 : 0;
+
 
   return {
     progress: formattedProgress,
     stats: {
         total: tests.length,
-        average: tests.length > 0 ? tests.reduce((acc, t) => acc + t.overallScore, 0) / tests.length : 0,
+        average: average,
+        trend: trend,
     }
   };
 }

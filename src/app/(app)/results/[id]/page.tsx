@@ -27,9 +27,8 @@ export default function ResultDetailPage({ params }: { params: { id: string } })
   useEffect(() => {
     if (appUser) {
       getTestDetails(params.id).then((data) => {
-        if (data && data.userId === appUser.id) {
-          setTest(data);
-        }
+        // The server action already ensures the user owns the test
+        setTest(data);
         setLoading(false);
       });
     }
@@ -139,7 +138,7 @@ export default function ResultDetailPage({ params }: { params: { id: string } })
                 <h1 className="text-3xl font-bold font-headline capitalize">{test.testType} Test Report</h1>
             </div>
             <CardDescription>
-              Test taken on {format(test.createdAt.toDate(), 'MMMM d, yyyy \'at\' h:mm a')}
+              Test taken on {format(new Date(test.createdAt), "MMMM d, yyyy 'at' h:mm a")}
             </CardDescription>
           </div>
            <Badge className={`px-4 py-2 text-md ${getRiskClasses(test.riskLevel)}`} variant="outline">

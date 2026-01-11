@@ -23,7 +23,7 @@ export default function ResultsPage() {
   useEffect(() => {
     if (appUser) {
       setLoading(true);
-      getAllTests(appUser.id).then((data) => {
+      getAllTests().then((data) => {
         setTests(data);
         setLoading(false);
       });
@@ -124,7 +124,7 @@ export default function ResultsPage() {
                                     <span className="capitalize">{test.testType} Test</span>
                                 </div>
                             </TableCell>
-                            <TableCell>{format(test.createdAt.toDate(), 'PPP p')}</TableCell>
+                            <TableCell>{format(new Date(test.createdAt), 'PPP p')}</TableCell>
                             <TableCell>
                             <Badge className={getRiskClasses(test.riskLevel)} variant="outline">
                                 {test.riskLevel}

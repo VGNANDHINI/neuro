@@ -38,16 +38,20 @@ function DashboardContent() {
     const [dataLoading, setDataLoading] = React.useState(true);
 
     React.useEffect(() => {
+        // We only fetch data once we have an appUser
         if (appUser) {
             setDataLoading(true);
-            getDashboardStats(appUser.id).then(data => {
+            getDashboardStats().then(data => {
                 setStats(data);
                 setDataLoading(false);
             });
+        } else if (!loading) {
+            // If not loading and still no appUser, stop loading data.
+            setDataLoading(false);
         }
-    }, [appUser]);
+    }, [appUser, loading]);
 
-    if (loading || !appUser || dataLoading) {
+    if (loading || dataLoading) {
         return (
             <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -77,6 +81,15 @@ function DashboardContent() {
             </div>
             </>
         );
+    }
+    
+    if (!stats) {
+        return (
+             <div className="text-center text-muted-foreground p-8">
+                <FileText className="mx-auto h-8 w-8 mb-2" />
+                <p>Could not load dashboard data.</p>
+            </div>
+        )
     }
     
     const quickStats = [
@@ -153,7 +166,7 @@ function DashboardContent() {
                                                 <div>
                                                     <p className="font-semibold capitalize">{test.testType} Test</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {formatDistanceToNow(test.createdAt.toDate(), { addSuffix: true })}
+                                                        {formatDistanceToNow(new Date(test.createdAt), { addSuffix: true })}
                                                     </p>
                                                 </div>
                                             </div>

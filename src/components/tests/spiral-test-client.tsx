@@ -141,7 +141,7 @@ export function SpiralTestClient() {
     if (points.length > 50) {
       setTestState('analyzing');
       if (appUser) {
-        const result = await analyzeAndSaveSpiralTest(appUser.id, points);
+        const result = await analyzeAndSaveSpiralTest(points);
         if ('error' in result) {
             // handle error
             setTestState('idle');

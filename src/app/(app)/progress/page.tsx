@@ -4,16 +4,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { getProgressData } from '@/lib/actions/data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  AreaChart,
-  Area,
 } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, BarChart3, CheckCircle } from 'lucide-react';
@@ -29,12 +27,12 @@ export default function ProgressPage() {
   const { appUser, loading: authLoading } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState('30'); // Not implemented on backend yet, for UI
+  const [timeframe, setTimeframe] = useState('30'); 
 
   useEffect(() => {
     if (appUser) {
       setLoading(true);
-      getProgressData(appUser.id).then((result) => {
+      getProgressData(timeframe).then((result) => {
         setData(result);
         setLoading(false);
       });
@@ -62,8 +60,9 @@ export default function ProgressPage() {
         <div className="bg-card border border-border p-3 rounded-lg shadow-lg">
           <p className="label font-bold">{`${label}`}</p>
           {payload.map(pld => (
+            pld.value &&
             <p key={pld.dataKey} style={{ color: pld.color }}>
-              <span className="capitalize">{pld.dataKey}: </span>
+              <span className="capitalize">{pld.name}: </span>
               <strong>{pld.value.toFixed(1)}</strong>
             </p>
           ))}
@@ -117,8 +116,8 @@ export default function ProgressPage() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold text-green-400">+5.2%</div>
-                <p className="text-xs text-muted-foreground">from last month</p>
+                <div className={`text-2xl font-bold ${data?.stats?.trend > 0 ? 'text-green-400' : 'text-red-400'}`}>{data?.stats?.trend.toFixed(1) || '0.0'}%</div>
+                <p className="text-xs text-muted-foreground">vs. previous period</p>
             </CardContent>
         </Card>
       </div>
@@ -152,9 +151,9 @@ export default function ProgressPage() {
                     <YAxis domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    <Area type="monotone" dataKey="spiral" stroke="#8884d8" fill="url(#colorSpiral)" name="Spiral Test" />
-                    <Area type="monotone" dataKey="voice" stroke="#82ca9d" fill="url(#colorVoice)" name="Voice Test" />
-                    <Area type="monotone" dataKey="tapping" stroke="#ffc658" fill="url(#colorTapping)" name="Tapping Test" />
+                    <Area type="monotone" dataKey="spiral" stroke="#8884d8" fill="url(#colorSpiral)" name="Spiral Test" connectNulls />
+                    <Area type="monotone" dataKey="voice" stroke="#82ca9d" fill="url(#colorVoice)" name="Voice Test" connectNulls />
+                    <Area type="monotone" dataKey="tapping" stroke="#ffc658" fill="url(#colorTapping)" name="Tapping Test" connectNulls />
                 </AreaChart>
                 </ResponsiveContainer>
             ) : (

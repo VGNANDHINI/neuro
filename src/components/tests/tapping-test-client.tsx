@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { analyzeAndSaveTappingTest } from '@/lib/actions/data';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Bar, BarChart, ResponsiveContainer, PolarGrid, PolarAngleAxis, Radar, RadarChart } from 'recharts';
+import { ResponsiveContainer, PolarGrid, PolarAngleAxis, Radar, RadarChart } from 'recharts';
 import { cn } from '@/lib/utils';
 
 const TEST_DURATION = 10; // seconds
@@ -49,7 +49,7 @@ export function TappingTestClient() {
     if(timerRef.current) clearTimeout(timerRef.current);
     setTestState('analyzing');
     if (appUser) {
-      const result = await analyzeAndSaveTappingTest(appUser.id, tapCount, TEST_DURATION);
+      const result = await analyzeAndSaveTappingTest(tapCount, TEST_DURATION);
       if ('error' in result) {
         toast({ variant: 'destructive', title: 'Analysis Failed', description: result.error });
         setTestState('idle');
