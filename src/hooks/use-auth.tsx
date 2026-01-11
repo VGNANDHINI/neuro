@@ -8,11 +8,9 @@ import {
   type ReactNode,
 } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { getAppUser } from '@/lib/actions/data';
+import { auth, db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -28,29 +26,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      if (!user) {
+      if (user) {
+        // User is logged in, now listen for their app data
+        const unsubSnapshot = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+          if (doc.exists()) {
+            setAppUser({ id: doc.id, ...doc.data() } as AppUser);
+          } else {
+            // This case might happen if the user record is deleted from firestore
+            // but the auth user still exists.
+            setAppUser(null);
+          }
+          setLoading(false);
+        });
+        return () => unsubSnapshot();
+      } else {
+        // User is logged out
         setAppUser(null);
         setLoading(false);
       }
     });
+
     return () => unsubscribeAuth();
   }, []);
-
-  useEffect(() => {
-    if (firebaseUser) {
-      const unsub = onSnapshot(doc(db, 'users', firebaseUser.uid), (doc) => {
-        if (doc.exists()) {
-          setAppUser({ id: doc.id, ...doc.data() } as AppUser);
-        } else {
-          setAppUser(null);
-        }
-        setLoading(false);
-      });
-      return () => unsub();
-    }
-  }, [firebaseUser]);
 
   return (
     <AuthContext.Provider value={{ firebaseUser, appUser, loading }}>
