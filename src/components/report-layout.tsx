@@ -1,12 +1,4 @@
 'use client';
-import { Logo } from '@/components/logo';
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  Radar,
-  ResponsiveContainer,
-} from 'recharts';
 import type { AppUser, TestResult } from '@/lib/types';
 import { format } from 'date-fns';
 
@@ -17,116 +9,130 @@ interface ReportLayoutProps {
   scoreCards: { label: string; value: number | string | undefined }[];
 }
 
-export function ReportLayout({ user, test, chartData, scoreCards }: ReportLayoutProps) {
+// This component uses inline styles extensively to ensure they are applied during printing,
+// as external CSS can sometimes be ignored by browser print engines.
 
+export function ReportLayout({ user, test, scoreCards }: ReportLayoutProps) {
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'Low':
-        return '#10B981'; // Green-500
+        return '#10B981'; // Green
       case 'Moderate':
-        return '#F59E0B'; // Amber-500
+        return '#F59E0B'; // Amber
       case 'High':
-        return '#EF4444'; // Red-500
+        return '#EF4444'; // Red
       default:
-        return '#6B7280'; // Gray-500
+        return '#000000'; // Black
     }
   };
 
+  const testCategoryMap = {
+      spiral: 'Neurological Motor Assessment (Spiral)',
+      voice: 'Vocal Biomarker Analysis (Voice)',
+      tapping: 'Motor Function Assessment (Tapping)',
+  }
+
   return (
-    <div className="bg-white text-black font-sans p-4">
-      <header className="mb-8 pb-4 border-b-2 border-gray-200">
-        <div className="flex justify-between items-start">
-            <div>
-                <h1 className="text-2xl font-bold">NeuroAI Health</h1>
-                <p className="text-gray-600 text-sm mt-1">Neurological Health Assessment Report</p>
-            </div>
-            <div className="text-right">
-                <p className="font-bold">Report Generated</p>
-                <p className="text-sm text-gray-600">{format(new Date(), 'MMMM d, yyyy')}</p>
-            </div>
-        </div>
+    <div style={{ fontFamily: 'Arial, sans-serif', color: '#000', backgroundColor: '#fff', fontSize: '11pt', lineHeight: '1.4' }}>
+      {/* 1. HEADER */}
+      <header style={{ textAlign: 'center', borderBottom: '2px solid #ccc', paddingBottom: '10px', marginBottom: '20px' }}>
+        <h1 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0' }}>NEUROAI HEALTH</h1>
+        <p style={{ fontSize: '10pt', margin: '5px 0 0 0' }}>123 Health Lane, Wellness City, 12345 | (555) 123-4567 | contact@neuroai.health</p>
       </header>
-      
+
       <main>
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-3 pb-2 border-b">Patient Information</h2>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-            <div><span className="font-semibold">Name:</span> {user.name}</div>
-            <div><span className="font-semibold">Email:</span> {user.email}</div>
-            <div><span className="font-semibold">Age:</span> {user.age || 'N/A'}</div>
-            <div><span className="font-semibold">Gender:</span> {user.gender || 'N/A'}</div>
+        {/* 2. REPORT TITLE */}
+        <h2 style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 'bold', margin: '20px 0' }}>
+          NEUROLOGICAL ASSESSMENT REPORT
+        </h2>
+
+        {/* 3. PATIENT INFORMATION */}
+        <section style={{ marginBottom: '30px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 20px' }}>
+            <p><strong style={{ minWidth: '120px', display: 'inline-block' }}>Patient Name:</strong> {user.name}</p>
+            <p><strong style={{ minWidth: '120px', display: 'inline-block' }}>Age / Gender:</strong> {user.age || 'N/A'} / {user.gender || 'N/A'}</p>
+            <p><strong style={{ minWidth: '120px', display: 'inline-block' }}>Patient Email:</strong> {user.email}</p>
+            <p><strong style={{ minWidth: '120px', display: 'inline-block' }}>Report Date:</strong> {format(new Date(), 'dd-MM-yyyy')}</p>
           </div>
         </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-4 pb-2 border-b">Test Result Details</h2>
-          
-          <div className="mb-6">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h3 className="text-2xl font-bold capitalize">{test.testType} Test Report</h3>
-                    <p className="text-gray-600 mt-1">
-                        Test taken on {format(new Date(test.createdAt), "MMMM d, yyyy 'at' h:mm a")}
-                    </p>
-                </div>
-                <div className="text-right">
-                    <p className="font-semibold">Risk Level</p>
-                    <p className="text-lg font-bold" style={{ color: getRiskColor(test.riskLevel) }}>
-                        {test.riskLevel} Risk
-                    </p>
-                </div>
+        {/* 4. TEST DETAILS */}
+         <section style={{ marginBottom: '30px' }}>
+            <h3 style={{ fontSize: '12pt', fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px' }}>TEST DETAILS</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 20px' }}>
+                 <p><strong style={{ minWidth: '120px', display: 'inline-block' }}>Test Name:</strong> <span style={{textTransform: 'capitalize'}}>{test.testType} Test</span></p>
+                 <p><strong style={{ minWidth: '120px', display: 'inline-block' }}>Test Category:</strong> {testCategoryMap[test.testType]}</p>
+                 <p><strong style={{ minWidth: '120px', display: 'inline-block' }}>Test Date:</strong> {format(new Date(test.createdAt), 'dd-MM-yyyy, h:mm a')}</p>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-8">
-            <div className="col-span-2">
-                <h3 className="text-lg font-bold mb-2">Score Breakdown</h3>
-                <div className="w-full h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                            <PolarGrid stroke="#e5e7eb" />
-                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#4b5563', fontSize: 14 }} />
-                            <Radar name="Score" dataKey="value" stroke="#2E47CC" fill="#2E47CC" fillOpacity={0.6} />
-                        </RadarChart>
-                    </ResponsiveContainer>
-                </div>
+        </section>
+
+        {/* 5. OBSERVATIONS / MEASURED VALUES */}
+        <section style={{ marginBottom: '30px' }}>
+            <h3 style={{ fontSize: '12pt', fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px' }}>OBSERVATIONS</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt' }}>
+                <thead>
+                    <tr style={{ backgroundColor: '#f2f2f2' }}>
+                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left', fontWeight: 'bold' }}>Parameter</th>
+                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>Observed Value</th>
+                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>Normal Range</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {scoreCards.map(metric => (
+                        <tr key={metric.label}>
+                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{metric.label}</td>
+                            <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>{metric.value}</td>
+                            <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>75-100</td>
+                        </tr>
+                    ))}
+                    <tr>
+                       <td style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold' }}>Overall Score</td>
+                       <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>{test.overallScore.toFixed(1)}</td>
+                       <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>75-100</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        {/* 6. INTERPRETATION */}
+        <section style={{ marginBottom: '30px' }}>
+             <h3 style={{ fontSize: '12pt', fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px' }}>INTERPRETATION</h3>
+             <p>This automated analysis is based on established biomarkers identified in clinical research. Scores are generated by comparing performance against normative data. Deviations from the normal range in parameters such as speed, smoothness, and consistency may indicate potential underlying neuromotor impairments. The overall score provides a summary of performance across all measured domains.</p>
+        </section>
+
+        {/* 7. RISK LEVEL */}
+        <section style={{ marginBottom: '30px' }}>
+            <div style={{ border: '1px solid #ccc', padding: '10px' }}>
+                 <span style={{fontWeight: 'bold'}}>RISK LEVEL: </span>
+                 <span style={{ fontWeight: 'bold', color: getRiskColor(test.riskLevel) }}>
+                    {test.riskLevel.toUpperCase()}
+                 </span>
             </div>
-            <div className="col-span-1 space-y-6">
-                <div>
-                    <h3 className="text-lg font-bold text-center mb-2">Overall Score</h3>
-                    <div className="text-center">
-                        <p className="text-7xl font-bold text-blue-700">
-                            {test.overallScore.toFixed(1)}
-                        </p>
-                        <p className="text-gray-500">out of 100</p>
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold mb-2">AI-Generated Recommendation</h3>
-                    <p className="text-gray-700 text-sm p-3">{test.recommendation}</p>
-                </div>
+        </section>
+
+        {/* 8. RECOMMENDATIONS */}
+        <section style={{ marginBottom: '40px' }}>
+            <h3 style={{ fontSize: '12pt', fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px' }}>AI-GENERATED RECOMMENDATIONS</h3>
+            <p>{test.recommendation}</p>
+        </section>
+
+        {/* 9. AUTHORIZATION */}
+        <section style={{ marginBottom: '40px', pageBreakInside: 'avoid' }}>
+            <div style={{ float: 'right', textAlign: 'center' }}>
+                <div style={{height: '60px'}}>{/* Space for signature */}</div>
+                <p style={{ borderTop: '1px solid #000', paddingTop: '5px', margin: '0' }}>Automated Report Generation</p>
+                <p style={{ margin: '0' }}>NeuroAI Health Platform</p>
             </div>
-          </div>
-          
-          <div className="mt-8">
-            <h3 className="text-lg font-bold mb-2">Detailed Metrics</h3>
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {scoreCards.map(metric => (
-                    <div key={metric.label} className="p-3">
-                        <p className="text-sm text-gray-500">{metric.label}</p>
-                        <p className="text-2xl font-bold text-gray-800">{metric.value}</p>
-                    </div>
-                ))}
-            </div>
-          </div>
+             <div style={{clear: 'both'}}></div>
         </section>
       </main>
 
-      <footer className="mt-12 pt-4 border-t-2 border-gray-200 text-center">
-        <p className="text-xs text-gray-500">
-            Disclaimer: NeuroAI Health is not a medical device and should not be used for diagnosis. This report is for informational purposes only. Always consult with a qualified healthcare professional for any health concerns.
+      {/* 10. FOOTER */}
+      <footer style={{ position: 'fixed', bottom: '0', left: '0', right: '0', textAlign: 'center', borderTop: '1px solid #ccc', paddingTop: '10px', fontSize: '9pt', color: '#666' }}>
+        <p style={{ margin: '0' }}>Confidential Medical Document – For authorized use only.</p>
+        <p style={{ margin: '5px 0' }}>
+            Disclaimer: NeuroAI Health is not a medical device and should not be used for diagnosis. This report is for informational purposes only. Always consult with a qualified healthcare professional.
         </p>
-         <p className="text-xs text-gray-500 mt-1">&copy; {new Date().getFullYear()} NeuroAI Health. All rights reserved.</p>
       </footer>
     </div>
   );
