@@ -18,7 +18,7 @@ import { db } from '@/lib/firebase';
 import type { AppUser, TestResult } from '@/lib/types';
 import { analyzeSpiralDrawing } from '@/ai/flows/analyze-spiral-drawing';
 import { analyzeVoiceRecording } from '@/ai/flows/analyze-voice-recording';
-import { analyzeTappingPatterns } from '@/ai/flows/analyze-tapping-patterns';
+import { analyzeTapping } from '@/ai/flows/analyze-tapping-patterns';
 
 // USER DATA
 export async function getAppUser(userId: string): Promise<AppUser | null> {
@@ -93,7 +93,7 @@ export async function analyzeAndSaveVoiceTest(userId: string, audioDataUri: stri
 
 export async function analyzeAndSaveTappingTest(userId: string, tapCount: number, duration: number) {
     try {
-      const result = await analyzeTappingPatterns({ tapCount, duration });
+      const result = await analyzeTapping({ tapCount, duration });
   
       const testResult: Omit<TestResult, 'id'> = {
         userId,
