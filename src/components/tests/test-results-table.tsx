@@ -93,15 +93,13 @@ export function TestResultsTable({ userId }: { userId: string }) {
 
   if (tests.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-16 text-center">
-          <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-semibold">No Tests Completed</h3>
-          <p className="text-muted-foreground mt-2">
-            You have not completed any tests yet.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="text-center p-16">
+        <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-xl font-semibold">No Tests Completed</h3>
+        <p className="text-muted-foreground mt-2">
+          You have not completed any tests yet.
+        </p>
+      </div>
     );
   }
 
