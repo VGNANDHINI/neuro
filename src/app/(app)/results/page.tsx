@@ -147,15 +147,7 @@ export default function ResultsPage() {
             </Card>
           ))}
         </div>
-      ) : (
-        <div className="text-center p-16 bg-card rounded-lg border">
-          <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-semibold">No Tests Found</h3>
-          <p className="text-muted-foreground mt-2">
-            You have not completed any {filter !== 'all' ? `${filter} ` : ''}tests yet.
-          </p>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
