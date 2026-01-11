@@ -147,7 +147,13 @@ export default function ResultsPage() {
             </Card>
           ))}
         </div>
-      ) : null}
+      ) : (
+        <Card>
+            <CardContent>
+                
+            </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
