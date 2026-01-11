@@ -6,7 +6,7 @@ import type { TestResult } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Download, Activity, Mic } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,15 +18,16 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export default function ResultDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ResultDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const { appUser } = useAuth();
   const [test, setTest] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (appUser) {
+    if (appUser && id) {
       getTestDetails(appUser.id, id).then((data) => {
         // The server action already ensures the user owns the test
         setTest(data);
