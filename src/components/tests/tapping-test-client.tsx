@@ -50,9 +50,9 @@ export function TappingTestClient() {
     setTestState('analyzing');
     if (appUser) {
       const result = await analyzeAndSaveTappingTest(appUser.id, tapCount, TEST_DURATION);
-      if ('error' in result) {
+      if (result && 'error' in result) {
         toast({ variant: 'destructive', title: 'Analysis Failed', description: result.error });
-        setTestState('idle');
+        resetTest();
       } else {
         setAnalysis(result);
         setTestState('results');
@@ -195,9 +195,15 @@ export function TappingTestClient() {
                  <p className="text-sm text-muted-foreground">{analysis.recommendation}</p>
                </div>
  
-               <Button onClick={() => router.push(`/results/${analysis.id}`)} className="w-full">
-                 View Full Report
-               </Button>
+               <div className="flex gap-4">
+                <Button variant="outline" onClick={resetTest} className="w-full">
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Try Again
+                </Button>
+                <Button onClick={() => router.push(`/results/${analysis.id}`)} className="w-full">
+                  View Full Report
+                </Button>
+              </div>
              </CardContent>
            </Card>
         )}
