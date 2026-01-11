@@ -8,236 +8,275 @@ import {
   query,
   where,
   orderBy,
-  limit,
   doc,
   getDoc,
   updateDoc,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
+
 import { db } from '@/lib/firebase';
 import type { AppUser, TestResult } from '@/lib/types';
+
 import { analyzeSpiralDrawing } from '@/ai/flows/analyze-spiral-drawing';
 import { analyzeVoiceRecording } from '@/ai/flows/analyze-voice-recording';
 import { analyzeTappingPatterns } from '@/ai/flows/analyze-tapping-patterns';
-import { 
-    AnalyzeSpiralDrawingOutputSchema, 
-    AnalyzeVoiceRecordingOutputSchema,
-    AnalyzeTappingPatternsOutputSchema,
+
+import {
+  AnalyzeSpiralDrawingOutputSchema,
+  AnalyzeVoiceRecordingOutputSchema,
+  AnalyzeTappingPatternsOutputSchema,
 } from '@/lib/types';
 
-// USER DATA
-export async function getAppUser(userId: string): Promise<AppUser | null> {
-  if (!userId) return null;
+/* -------------------- HELPERS -------------------- */
 
-  const userDoc = await getDoc(doc(db, 'users', userId));
-  if (userDoc.exists()) {
-    return { id: userDoc.id, ...userDoc.data() } as AppUser;
-  }
+function safeReturn<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data));
+}
+
+function tsToISO(ts: any): string | null {
+  if (!ts) return null;
+  if (ts instanceof Timestamp) return ts.toDate().toISOString();
+  if (typeof ts === 'string') return ts; // Already a string
+  if (ts.seconds && typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toISOString();
   return null;
 }
 
-export async function updateUserProfile(userId: string, data: Partial<AppUser>) {
-  if (!userId) return { error: 'Authentication required.' };
-  
+/* -------------------- USER -------------------- */
+
+export async function getAppUser(userId: string): Promise<AppUser | null> {
+  if (!userId) return null;
+
   try {
-    await updateDoc(doc(db, 'users', userId), data);
-    return { success: 'Profile updated successfully.' };
-  } catch (error) {
-    return { error: 'Failed to update profile.' };
+    const snap = await getDoc(doc(db, 'users', userId));
+    if (!snap.exists()) return null;
+
+    const userData = snap.data();
+    return safeReturn({ 
+      id: snap.id, 
+      ...userData,
+      createdAt: tsToISO(userData.createdAt),
+      lastLogin: tsToISO(userData.lastLogin),
+    } as AppUser);
+  } catch (e) {
+    console.error('getAppUser error:', e);
+    return null;
   }
 }
 
-// TEST ANALYSIS AND STORAGE
-export async function analyzeAndSaveSpiralTest(userId: string, userEmail: string, points: { x: number; y: number; timestamp: number }[]) {
-  if (!userId || !userEmail) return { error: 'Authentication required.' };
-  
-  try {
-    const result = await analyzeSpiralDrawing({ points: JSON.stringify(points) });
-    const validation = AnalyzeSpiralDrawingOutputSchema.safeParse(result);
+export async function updateUserProfile(
+  userId: string,
+  data: Partial<AppUser>
+) {
+  if (!userId) return { error: 'Authentication required' };
 
-    if (!validation.success) {
-      console.error('Invalid AI response for spiral test:', validation.error);
-      throw new Error('Invalid AI response format.');
-    }
-    const validatedResult = validation.data;
-    
-    const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
+  try {
+    await updateDoc(doc(db, 'users', userId), data);
+    return safeReturn({ success: true });
+  } catch (e) {
+    console.error('updateUserProfile error:', e);
+    return { error: 'Failed to update profile' };
+  }
+}
+
+/* -------------------- SPIRAL -------------------- */
+
+export async function analyzeAndSaveSpiralTest(
+  userId: string,
+  userEmail: string,
+  points: { x: number; y: number; timestamp: number }[]
+) {
+  if (!userId || !userEmail) return { error: 'Auth required' };
+
+  try {
+    const result = await analyzeSpiralDrawing({
+      points: JSON.stringify(points),
+    });
+
+    const parsed = AnalyzeSpiralDrawingOutputSchema.parse(result);
+
+    const docRef = await addDoc(collection(db, 'tests'), {
       userId,
       userEmail,
       testType: 'spiral',
       testData: JSON.stringify(points),
-      tremorScore: validatedResult.tremorScore,
-      smoothnessScore: validatedResult.smoothnessScore,
-      speedScore: validatedResult.speedScore,
-      consistencyScore: validatedResult.consistencyScore,
-      overallScore: validatedResult.overallScore,
-      riskLevel: validatedResult.riskLevel,
-      recommendation: validatedResult.recommendation,
-    };
-
-    const docRef = await addDoc(collection(db, 'tests'), {
-      ...testResult,
+      ...parsed,
       createdAt: serverTimestamp(),
     });
-    return { id: docRef.id, ...validatedResult };
-  } catch (error) {
-    console.error('Spiral test analysis failed:', error);
-    return { error: 'Analysis failed.' };
+
+    return safeReturn({ id: docRef.id, ...parsed });
+  } catch (e) {
+    console.error('Spiral error:', e);
+    return { error: 'Analysis failed' };
   }
 }
 
-export async function analyzeAndSaveVoiceTest(userId: string, userEmail: string, audioDataUri: string) {
-    if (!userId || !userEmail) return { error: 'Authentication required.' };
-    
-    try {
-      const result = await analyzeVoiceRecording({ audioDataUri });
-      const validation = AnalyzeVoiceRecordingOutputSchema.safeParse(result);
-      if (!validation.success) {
-        console.error('Invalid AI response for voice test:', validation.error);
-        throw new Error('Invalid AI response format.');
-      }
-      const validatedResult = validation.data;
-      
-      const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
-        userId,
-        userEmail,
-        testType: 'voice',
-        testData: audioDataUri.substring(0, 50) + '...', 
-        pitchScore: validatedResult.pitch_score,
-        volumeScore: validatedResult.volume_score,
-        clarityScore: validatedResult.clarity_score,
-        tremorScore: validatedResult.tremor_score,
-        overallScore: validatedResult.overall_score,
-        riskLevel: validatedResult.risk_level as 'Low' | 'Moderate' | 'High',
-        recommendation: validatedResult.recommendation,
-      };
-  
-      const docRef = await addDoc(collection(db, 'tests'), {
-        ...testResult,
-        createdAt: serverTimestamp(),
-      });
-      return { id: docRef.id, ...validatedResult };
-    } catch (error) {
-      console.error('Voice test analysis failed:', error);
-      return { error: 'Analysis failed.' };
-    }
-}
+/* -------------------- VOICE -------------------- */
 
-export async function analyzeAndSaveTappingTest(userId: string, userEmail: string, tapTimestamps: number[], duration: number) {
-    if (!userId || !userEmail) return { error: 'Authentication required.' };
-    
-    try {
-      const result = await analyzeTappingPatterns({ tapTimestamps, duration });
-      const validation = AnalyzeTappingPatternsOutputSchema.safeParse(result);
-      if (!validation.success) {
-        console.error('Invalid AI response for tapping test:', validation.error);
-        throw new Error('Invalid AI response format.');
-      }
-      const validatedResult = validation.data;
-      
-      const testResult: Omit<TestResult, 'id' | 'createdAt'> = {
-        userId,
-        userEmail,
-        testType: 'tapping',
-        testData: JSON.stringify({ tapCount: validatedResult.tapCount, duration }),
-        tapCount: validatedResult.tapCount,
-        tapsPerSecond: validatedResult.tapsPerSecond,
-        speedScore: validatedResult.speedScore,
-        consistencyScore: validatedResult.consistencyScore,
-        rhythmScore: validatedResult.rhythmScore,
-        fatigueScore: validatedResult.fatigueScore,
-        overallScore: validatedResult.overallScore,
-        riskLevel: validatedResult.riskLevel as 'Low' | 'Moderate' | 'High',
-        recommendation: validatedResult.recommendation,
-      };
-  
-      const docRef = await addDoc(collection(db, 'tests'), {
-        ...testResult,
-        createdAt: serverTimestamp(),
-      });
-      return { id: docRef.id, ...validatedResult };
-    } catch (error) {
-      console.error('Tapping test analysis failed:', error);
-      return { error: 'Analysis failed.' };
-    }
-}
+export async function analyzeAndSaveVoiceTest(
+  userId: string,
+  userEmail: string,
+  audioDataUri: string
+) {
+  if (!userId || !userEmail) return { error: 'Auth required' };
 
+  try {
+    const result = await analyzeVoiceRecording({ audioDataUri });
+    const parsed = AnalyzeVoiceRecordingOutputSchema.parse(result);
 
-// DATA FETCHING
-export async function getDashboardStats(userId: string) {
-  if (!userId) return null;
-  
-  const testsQuery = query(collection(db, 'tests'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
-  const testsSnapshot = await getDocs(testsQuery);
-  const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TestResult[];
-
-  const totalTests = tests.length;
-  const recentTests = tests.slice(0, 5).map(t => ({...t, createdAt: (t.createdAt as unknown as Timestamp).toDate().toISOString()}));
-  const allScores = tests.map(t => t.overallScore);
-  const averageScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
-  
-  const testsByType = {
-    spiral: tests.filter(t => t.testType === 'spiral').length,
-    voice: tests.filter(t => t.testType === 'voice').length,
-    tapping: tests.filter(t => t.testType === 'tapping').length,
-  };
-  
-  const latestTest = tests[0] ?? null;
-  const currentRisk = latestTest?.riskLevel || 'N/A';
-
-  return {
-    totalTests,
-    averageScore,
-    currentRisk,
-    recentTests,
-    testsByType,
-  };
-}
-
-export async function getAllTests(userId: string): Promise<TestResult[]> {
-    if (!userId) return [];
-    
-    const testsQuery = query(
-        collection(db, 'tests'), 
-        where('userId', '==', userId), 
-        orderBy('createdAt', 'desc')
-    );
-    const testsSnapshot = await getDocs(testsQuery);
-    
-    if (testsSnapshot.empty) {
-        return [];
-    }
-
-    const tests = testsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        const createdAt = data.createdAt as Timestamp; // Cast to Firestore Timestamp
-        return { 
-            ...data, 
-            id: doc.id, 
-            createdAt: createdAt.toDate().toISOString() // Convert Timestamp to ISO string
-        } as TestResult;
+    const docRef = await addDoc(collection(db, 'tests'), {
+      userId,
+      userEmail,
+      testType: 'voice',
+      testData: JSON.stringify({ audioPreview: audioDataUri.substring(0, 50) + '...' }),
+      pitchScore: parsed.pitch_score,
+      volumeScore: parsed.volume_score,
+      clarityScore: parsed.clarity_score,
+      tremorScore: parsed.tremor_score,
+      overallScore: parsed.overall_score,
+      riskLevel: parsed.risk_level,
+      recommendation: parsed.recommendation,
+      createdAt: serverTimestamp(),
     });
 
-    return tests;
+    return safeReturn({ id: docRef.id, ...parsed });
+  } catch (e) {
+    console.error('Voice error:', e);
+    return { error: 'Analysis failed' };
+  }
 }
 
+/* -------------------- TAPPING -------------------- */
 
-export async function getTestDetails(userId: string, testId: string): Promise<TestResult | null> {
+export async function analyzeAndSaveTappingTest(
+  userId: string,
+  userEmail: string,
+  tapTimestamps: number[],
+  duration: number
+) {
+  if (!userId || !userEmail) return { error: 'Auth required' };
+
+  try {
+    const result = await analyzeTappingPatterns({
+      tapTimestamps,
+      duration,
+    });
+
+    const parsed = AnalyzeTappingPatternsOutputSchema.parse(result);
+
+    const docRef = await addDoc(collection(db, 'tests'), {
+      userId,
+      userEmail,
+      testType: 'tapping',
+      testData: JSON.stringify({ tapTimestamps, duration }),
+      ...parsed,
+      createdAt: serverTimestamp(),
+    });
+
+    return safeReturn({ id: docRef.id, ...parsed });
+  } catch (e) {
+    console.error('Tapping error:', e);
+    return { error: 'Analysis failed' };
+  }
+}
+
+/* -------------------- DASHBOARD -------------------- */
+
+export async function getDashboardStats(userId: string) {
   if (!userId) return null;
 
-  const testDoc = await getDoc(doc(db, 'tests', testId));
-  if (!testDoc.exists()) {
+  try {
+    const q = query(
+      collection(db, 'tests'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
+
+    const snap = await getDocs(q);
+    const tests = snap.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      createdAt: tsToISO(d.data().createdAt),
+    })) as TestResult[];
+
+    const scores = tests
+      .map(t => t.overallScore)
+      .filter((n): n is number => typeof n === 'number');
+
+    return safeReturn({
+      totalTests: tests.length,
+      averageScore:
+        scores.length > 0
+          ? scores.reduce((a, b) => a + b, 0) / scores.length
+          : 0,
+      currentRisk: tests[0]?.riskLevel ?? 'N/A',
+      recentTests: tests.slice(0, 5),
+      testsByType: {
+        spiral: tests.filter(t => t.testType === 'spiral').length,
+        voice: tests.filter(t => t.testType === 'voice').length,
+        tapping: tests.filter(t => t.testType === 'tapping').length,
+      },
+    });
+  } catch (e) {
+    console.error('Dashboard error:', e);
     return null;
   }
-  const testData = testDoc.data() as TestResult;
-
-  if (testData.userId !== userId) {
-    return null; // Don't allow access to other users' tests
-  }
-
-  return { ...testData, id: testDoc.id, createdAt: (testData.createdAt as unknown as Timestamp).toDate().toISOString() } as TestResult;
 }
+
+/* -------------------- ALL TESTS -------------------- */
+
+export async function getAllTests(userId: string): Promise<TestResult[]> {
+  if (!userId) return [];
+
+  try {
+    const q = query(
+      collection(db, 'tests'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
+
+    const snap = await getDocs(q);
+
+    return safeReturn(
+      snap.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        createdAt: tsToISO(d.data().createdAt),
+      })) as TestResult[]
+    );
+  } catch (e) {
+    console.error('getAllTests error:', e);
+    return [];
+  }
+}
+
+/* -------------------- SINGLE TEST -------------------- */
+
+export async function getTestDetails(
+  userId: string,
+  testId: string
+): Promise<TestResult | null> {
+  if (!userId) return null;
+
+  try {
+    const snap = await getDoc(doc(db, 'tests', testId));
+    if (!snap.exists()) return null;
+
+    const data = snap.data() as TestResult;
+    if (data.userId !== userId) return null;
+
+    return safeReturn({
+      id: snap.id,
+      ...data,
+      createdAt: tsToISO(data.createdAt),
+    });
+  } catch (e) {
+    console.error('getTestDetails error:', e);
+    return null;
+  }
+}
+
+/* -------------------- PROGRESS -------------------- */
 
 export async function getProgressData(userId: string, timeframe: string) {
     if (!userId) return null;
@@ -299,14 +338,12 @@ export async function getProgressData(userId: string, timeframe: string) {
     const previousAverage = previousScores.length > 0 ? previousScores.reduce((a,b) => a+b, 0) / previousScores.length : 0;
     const trend = previousAverage > 0 ? ((average - previousAverage) / previousAverage) * 100 : (average > 0 ? 100 : 0);
 
-    return {
+    return safeReturn({
         progress: formattedProgress,
         stats: {
             total: tests.length,
             average: average,
             trend: trend,
         }
-    };
+    });
 }
-
-    

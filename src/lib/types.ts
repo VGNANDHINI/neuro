@@ -9,8 +9,8 @@ export type AppUser = {
   gender?: string;
   phone?: string;
   location?: string;
-  createdAt: Timestamp;
-  lastLogin?: Timestamp;
+  createdAt: string; // From Timestamp
+  lastLogin?: string; // From Timestamp
   photoURL?: string;
 };
 
@@ -43,7 +43,7 @@ export type TestResult = {
   rhythmScore?: number;
   fatigueScore?: number;
   
-  createdAt: string; // Changed from Timestamp to string for client-side compatibility
+  createdAt: string; // From Timestamp
 };
 
 // AI Flow Schemas
