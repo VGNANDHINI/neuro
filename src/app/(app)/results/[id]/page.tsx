@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Activity, Mic, Hand } from 'lucide-react';
+import { ArrowLeft, Download, Activity, Mic, Hand, Timer } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   RadarChart,
@@ -86,6 +86,7 @@ export default function ResultDetailPage() {
     spiral: <Activity className="h-8 w-8" />,
     voice: <Mic className="h-8 w-8" />,
     tapping: <Hand className="h-8 w-8" />,
+    reaction: <Timer className="h-8 w-8" />,
   };
   
   let chartData: { subject: string, value: number, fullMark: number }[] = [];
@@ -133,6 +134,17 @@ export default function ResultDetailPage() {
             { label: 'Rhythm Score', value: test.rhythmScore?.toFixed(1) },
             { label: 'Fatigue Score', value: test.fatigueScore?.toFixed(1) },
             { label: 'Taps/Sec', value: test.tapsPerSecond?.toFixed(1) },
+        ];
+        break;
+    case 'reaction':
+        chartData = [
+            { subject: 'Speed', value: test.reactionTimeScore || 0, fullMark: 100 },
+            { subject: 'Consistency', value: test.reactionConsistencyScore || 0, fullMark: 100 },
+        ];
+        scoreCards = [
+            { label: 'Speed Score', value: test.reactionTimeScore?.toFixed(1) },
+            { label: 'Consistency Score', value: test.reactionConsistencyScore?.toFixed(1) },
+            { label: 'Average Time (ms)', value: test.averageTime?.toFixed(0) },
         ];
         break;
   }
@@ -217,5 +229,3 @@ export default function ResultDetailPage() {
     </>
   );
 }
-
-    

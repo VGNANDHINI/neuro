@@ -8,6 +8,7 @@ import {
   Activity,
   Mic,
   Hand,
+  Timer,
   ChevronRight,
   FileText,
 } from 'lucide-react';
@@ -82,11 +83,12 @@ function DashboardContent() {
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                     <h2 className="text-xl font-bold font-headline mb-4">Start a New Test</h2>
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
                             { id: 'spiral', icon: Activity, title: 'Spiral Test' },
                             { id: 'voice', icon: Mic, title: 'Voice Test' },
                             { id: 'tapping', icon: Hand, title: 'Tapping Test' },
+                            { id: 'reaction', icon: Timer, title: 'Reaction Test' },
                         ].map((action) => (
                             <Link href={`/tests/${action.id}`} key={action.id} className="group">
                                 <Card className="h-full hover:border-primary transition-colors">

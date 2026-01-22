@@ -18,7 +18,7 @@ export type TestResult = {
   id: string;
   userId: string;
   userEmail: string;
-  testType: 'spiral' | 'voice' | 'tapping';
+  testType: 'spiral' | 'voice' | 'tapping' | 'reaction';
   testData: string; // JSON string of test raw data
   
   // Common Scores
@@ -42,6 +42,11 @@ export type TestResult = {
   consistencyScore?: number;
   rhythmScore?: number;
   fatigueScore?: number;
+  
+  // Reaction specific
+  reactionTimeScore?: number;
+  reactionConsistencyScore?: number;
+  averageTime?: number;
   
   createdAt: string; // From Timestamp
 };
@@ -120,3 +125,20 @@ export const AnalyzeTappingPatternsOutputSchema = z.object({
     recommendation: z.string().describe('A textual recommendation for the user based on the results.'),
 });
 export type AnalyzeTappingPatternsOutput = z.infer<typeof AnalyzeTappingPatternsOutputSchema>;
+
+
+// Reaction Time Test
+export const AnalyzeReactionTimeInputSchema = z.object({
+  reactionTimes: z.array(z.number()).describe('An array of reaction times in milliseconds.'),
+});
+export type AnalyzeReactionTimeInput = z.infer<typeof AnalyzeReactionTimeInputSchema>;
+
+export const AnalyzeReactionTimeOutputSchema = z.object({
+    averageTime: z.number().describe('Average reaction time in milliseconds.'),
+    reactionTimeScore: z.number().describe('Score based on the reaction speed (0-100, higher is better).'),
+    reactionConsistencyScore: z.number().describe('Score based on the consistency of reaction times (0-100, higher is better).'),
+    overallScore: z.number().describe('A weighted overall score of reaction performance (0-100).'),
+    riskLevel: z.enum(['Low', 'Moderate', 'High']).describe('The assessed risk level.'),
+    recommendation: z.string().describe('A textual recommendation for the user based on the results.'),
+});
+export type AnalyzeReactionTimeOutput = z.infer<typeof AnalyzeReactionTimeOutputSchema>;

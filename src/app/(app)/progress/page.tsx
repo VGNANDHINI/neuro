@@ -145,6 +145,10 @@ export default function ProgressPage() {
                             <stop offset="5%" stopColor="#ffc658" stopOpacity={0.8}/>
                             <stop offset="95%" stopColor="#ffc658" stopOpacity={0}/>
                         </linearGradient>
+                         <linearGradient id="colorReaction" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#ff8042" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#ff8042" stopOpacity={0}/>
+                        </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="date" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
@@ -154,6 +158,7 @@ export default function ProgressPage() {
                     <Area type="monotone" dataKey="spiral" stroke="#8884d8" fill="url(#colorSpiral)" name="Spiral Test" connectNulls />
                     <Area type="monotone" dataKey="voice" stroke="#82ca9d" fill="url(#colorVoice)" name="Voice Test" connectNulls />
                     <Area type="monotone" dataKey="tapping" stroke="#ffc658" fill="url(#colorTapping)" name="Tapping Test" connectNulls />
+                    <Area type="monotone" dataKey="reaction" stroke="#ff8042" fill="url(#colorReaction)" name="Reaction Test" connectNulls />
                 </AreaChart>
                 </ResponsiveContainer>
             ) : (

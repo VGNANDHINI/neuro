@@ -11,6 +11,7 @@ import {
   Activity,
   Mic,
   Hand,
+  Timer,
   X,
   type LucideIcon,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ const navItems: NavItem[] = [
   { id: 'spiral-test', href: '/tests/spiral', icon: Activity, label: 'Spiral Test', group: 'tests' },
   { id: 'voice-test', href: '/tests/voice', icon: Mic, label: 'Voice Test', group: 'tests' },
   { id: 'tapping-test', href: '/tests/tapping', icon: Hand, label: 'Tapping Test', group: 'tests' },
+  { id: 'reaction-test', href: '/tests/reaction', icon: Timer, label: 'Reaction Test', group: 'tests' },
 ];
 
 export function AppSidebar({

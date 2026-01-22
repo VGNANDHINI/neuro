@@ -21,11 +21,13 @@ import type { AppUser, TestResult } from '@/lib/types';
 import { analyzeSpiralDrawing } from '@/ai/flows/analyze-spiral-drawing';
 import { analyzeVoiceRecording } from '@/ai/flows/analyze-voice-recording';
 import { analyzeTappingPatterns } from '@/ai/flows/analyze-tapping-patterns';
+import { analyzeReactionTime } from '@/ai/flows/analyze-reaction-time';
 
 import {
   AnalyzeSpiralDrawingOutputSchema,
   AnalyzeVoiceRecordingOutputSchema,
   AnalyzeTappingPatternsOutputSchema,
+  AnalyzeReactionTimeOutputSchema,
 } from '@/lib/types';
 
 /* -------------------- HELPERS -------------------- */
@@ -180,6 +182,37 @@ export async function analyzeAndSaveTappingTest(
   }
 }
 
+/* -------------------- REACTION -------------------- */
+
+export async function analyzeAndSaveReactionTest(
+  userId: string,
+  userEmail: string,
+  reactionTimes: number[]
+) {
+  if (!userId || !userEmail) return { error: 'Auth required' };
+
+  try {
+    const result = await analyzeReactionTime({ reactionTimes });
+
+    const parsed = AnalyzeReactionTimeOutputSchema.parse(result);
+
+    const docRef = await addDoc(collection(db, 'tests'), {
+      userId,
+      userEmail,
+      testType: 'reaction',
+      testData: JSON.stringify({ reactionTimes }),
+      ...parsed,
+      createdAt: serverTimestamp(),
+    });
+
+    return safeReturn({ id: docRef.id, ...parsed });
+  } catch (e) {
+    console.error('Reaction Time error:', e);
+    return { error: 'Analysis failed' };
+  }
+}
+
+
 /* -------------------- DASHBOARD -------------------- */
 
 export async function getDashboardStats(userId: string) {
@@ -309,13 +342,13 @@ export async function getProgressData(userId: string, timeframe: string) {
     });
 
     const formattedProgress = Object.keys(dailyAverages).map(dateKey => {
-        const dayData: { date: string; spiral?: number; voice?: number; tapping?: number } = {
+        const dayData: { date: string; spiral?: number; voice?: number; tapping?: number; reaction?: number; } = {
             date: new Date(dateKey).toLocaleString('en-US', { month: 'short', day: 'numeric' }),
         };
         for (const testType in dailyAverages[dateKey]) {
             const { sum, count } = dailyAverages[dateKey][testType];
             if (count > 0) {
-                dayData[testType as 'spiral' | 'voice' | 'tapping'] = sum / count;
+                dayData[testType as 'spiral' | 'voice' | 'tapping' | 'reaction'] = sum / count;
             }
         }
         return dayData;

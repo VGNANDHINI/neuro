@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Activity, Mic, FileText, Hand } from 'lucide-react';
+import { Activity, Mic, FileText, Hand, Timer } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -58,6 +58,7 @@ export function TestResultsTable({ userId }: { userId: string }) {
       spiral: <Activity className="h-5 w-5" />,
       voice: <Mic className="h-5 w-5" />,
       tapping: <Hand className="h-5 w-5" />,
+      reaction: <Timer className="h-5 w-5" />,
     };
     return icons[type] || <FileText className="h-5 w-5" />;
   };
