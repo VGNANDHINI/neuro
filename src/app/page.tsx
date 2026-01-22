@@ -61,7 +61,7 @@ export default function LandingPage() {
               Take Control of Your Neurological Health
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10">
-              NeuroVita provides accessible, AI-powered tests to help you monitor for early signs of neurological conditions like Parkinson's disease, right from home.
+              NeuroTiva provides accessible, AI-powered tests to help you monitor for early signs of neurological conditions like Parkinson's disease, right from home.
             </p>
             <Button size="lg" asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
               <Link href="/register">
@@ -109,9 +109,9 @@ export default function LandingPage() {
 
       <footer className="border-t border-border py-8">
         <div className="container mx-auto px-6 text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} NeuroVita. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} NeuroTiva. All rights reserved.</p>
           <p className="text-xs mt-2">
-            Disclaimer: NeuroVita is not a medical device and should not be used for diagnosis. Always consult with a qualified healthcare professional.
+            Disclaimer: NeuroTiva is not a medical device and should not be used for diagnosis. Always consult with a qualified healthcare professional.
           </p>
         </div>
       </footer>

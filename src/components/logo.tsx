@@ -9,7 +9,7 @@ export function Logo({ className }: { className?: string }) {
         <Brain className="w-6 h-6 text-primary-foreground" />
       </div>
       <span className="text-xl font-bold font-headline text-foreground">
-        NeuroVita
+        NeuroTiva
       </span>
     </Link>
   );
