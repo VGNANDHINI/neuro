@@ -38,8 +38,7 @@ export function SpiralTestClient() {
     let radius = 5;
 
     ctx.strokeStyle = 'hsl(var(--border))';
-    ctx.lineWidth = 40;
-    ctx.setLineDash([5, 10]);
+    ctx.lineWidth = 2; // A thin, solid line for tracing
     ctx.beginPath();
 
     for (let i = 0; i < 720; i++) {
@@ -53,7 +52,6 @@ export function SpiralTestClient() {
       radius += 0.35;
     }
     ctx.stroke();
-    ctx.setLineDash([]);
     
     // Draw start circle
     ctx.fillStyle = 'hsl(var(--primary))';
