@@ -94,13 +94,13 @@ export const AnalyzeVoiceRecordingInputSchema = z.object({
 export type AnalyzeVoiceRecordingInput = z.infer<typeof AnalyzeVoiceRecordingInputSchema>;
 
 export const AnalyzeVoiceRecordingOutputSchema = z.object({
-  pitchScore: z.number().describe('The pitch score of the voice recording.'),
-  volumeScore: z.number().describe('The volume score of the voice recording.'),
-  clarityScore: z.number().describe('The clarity score of the voice recording.'),
-  tremorScore: z.number().describe('The tremor score of the voice recording.'),
-  overallScore: z.number().describe('The overall score of the voice recording.'),
+  pitchScore: z.number().describe('The pitch score of the voice recording (0-100, higher is better).'),
+  volumeScore: z.number().describe('The volume score of the voice recording (0-100, higher is better).'),
+  clarityScore: z.number().describe('The clarity score of the voice recording (0-100, higher is better).'),
+  tremorScore: z.number().describe('The tremor score of the voice recording (0-100, higher is worse).'),
+  overallScore: z.number().describe('The overall weighted score of the voice recording (0-100, higher is better).'),
   riskLevel: z
-    .string()
+    .enum(['Low', 'Moderate', 'High'])
     .describe("The risk level of the voice recording ('Low', 'Moderate', or 'High')."),
   recommendation: z.string().describe('A recommendation based on the risk level.'),
 });

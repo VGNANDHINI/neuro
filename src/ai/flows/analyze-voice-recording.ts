@@ -26,23 +26,24 @@ const analyzeVoiceRecordingPrompt = ai.definePrompt({
   input: {schema: AnalyzeVoiceRecordingInputSchema},
   output: {schema: AnalyzeVoiceRecordingOutputSchema},
   prompt: `You are an expert in analyzing voice recordings for potential vocal biomarkers of Parkinson's disease.
+The user has recorded themselves saying "The quick brown fox jumps over the lazy dog."
+Analyze the provided voice recording of this phrase.
 
-  Analyze the provided voice recording and provide scores for pitch, volume, clarity, and tremor.
-  Based on these scores, determine an overall score and a risk level (Low, Moderate, or High).
-  Also, provide a recommendation based on the risk level.
+You will assess the following vocal characteristics on a scale of 0-100.
+- **pitchScore**: Evaluate for monopitch. A varied and natural pitch gets a high score (closer to 100). A flat, monotonous pitch gets a low score.
+- **volumeScore**: Evaluate for monoloudness. Consistent, clear volume gets a high score (closer to 100). Trailing off or inconsistent volume gets a low score.
+- **clarityScore**: Evaluate for slurred or imprecise speech. Crisp, clear articulation gets a high score (closer to 100). Mumbled or slurred words get a low score.
+- **tremorScore**: This score measures the amount of tremor, where a higher score means more tremor is detected. A score of 0 is a perfectly steady voice.
 
-  Voice Recording: {{media url=audioDataUri}}
+Based on these individual scores, you must also calculate a weighted **overallScore**. The weights are: clarityScore (40%), volumeScore (25%), pitchScore (20%), and Steadiness (100 - tremorScore) (15%).
 
-  Ensure the output is in the following JSON format:
-  {
-    "pitchScore": number,
-    "volumeScore": number,
-    "clarityScore": number,
-    "tremorScore": number,
-    "overallScore": number,
-    "riskLevel": string,
-    "recommendation": string
-  }`,
+Finally, determine a **riskLevel** and provide a **recommendation** based on the overall score:
+- **overallScore >= 75**: 'Low' risk. Recommendation should be encouraging and suggest regular monitoring.
+- **overallScore >= 50 and < 75**: 'Moderate' risk. Recommendation should suggest re-testing and consulting a provider if concerned.
+- **overallScore < 50**: 'High' risk. Recommendation should strongly advise consulting a neurologist.
+
+Voice Recording: {{media url=audioDataUri}}
+`,
 });
 
 const analyzeVoiceRecordingFlow = ai.defineFlow(
@@ -52,47 +53,10 @@ const analyzeVoiceRecordingFlow = ai.defineFlow(
     outputSchema: AnalyzeVoiceRecordingOutputSchema,
   },
   async input => {
-    // Since direct audio analysis is complex and beyond the scope of this example,
-    // we will simulate the analysis and return dummy scores.
-
-    // In a real-world scenario, you would use audio processing libraries or APIs
-    // to extract features like pitch, volume, clarity, and tremor from the audio data.
-
-    // Simulate audio analysis scores (replace with actual analysis in a real implementation)
-    const pitchScore = Math.random() * 30 + 60;
-    const volumeScore = Math.random() * 30 + 65;
-    const clarityScore = Math.random() * 30 + 70;
-    const tremorScore = Math.random() * 40 + 10;
-    const overallScore = (pitchScore + volumeScore + clarityScore + (100 - tremorScore)) / 4;
-
-    // Determine risk level based on overall score
-    const riskLevel = overallScore > 75 ? 'Low' : overallScore > 50 ? 'Moderate' : 'High';
-
-    // Provide a recommendation based on the risk level
-    const recommendation = getRecommendation(riskLevel);
-
-    // Return the analysis results
-    return {
-      pitchScore,
-      volumeScore,
-      clarityScore,
-      tremorScore,
-      overallScore,
-      riskLevel,
-      recommendation,
-    };
+    const { output } = await analyzeVoiceRecordingPrompt(input);
+    if (!output) {
+      throw new Error('The AI model did not return a valid analysis.');
+    }
+    return output;
   }
 );
-
-function getRecommendation(riskLevel: string): string {
-  switch (riskLevel) {
-    case 'Low':
-      return 'No significant vocal biomarkers detected. Continue regular monitoring.';
-    case 'Moderate':
-      return 'Some irregularities detected. Consider consulting a healthcare provider.';
-    case 'High':
-      return 'Significant vocal biomarkers detected. We strongly recommend consulting a neurologist for comprehensive evaluation.';
-    default:
-      return 'No recommendation available.';
-  }
-}
