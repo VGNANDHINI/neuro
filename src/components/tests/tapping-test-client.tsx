@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Hand, RotateCcw, CheckCircle, Loader2 } from 'lucide-react';
@@ -32,11 +32,53 @@ export function TappingTestClient() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const testStartTimeRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+  const resetTest = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setTestState('idle');
+    setTimeLeft(TEST_DURATION);
+    setTapCount(0);
+    setTapTimestamps([]);
+    setAnalysis(null);
   }, []);
+
+  const endTest = useCallback(async () => {
+    setTestState('analyzing');
+    if (!appUser) {
+      toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to save results.' });
+      resetTest();
+      return;
+    }
+    try {
+      const result = await analyzeAndSaveTappingTest(appUser.id, appUser.email, tapTimestamps, TEST_DURATION);
+      if (result && 'error' in result) {
+        toast({ variant: 'destructive', title: 'Analysis Failed', description: result.error });
+        resetTest();
+      } else {
+        setAnalysis(result);
+        setTestState('results');
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Analysis Failed', description: 'An unexpected error occurred.' });
+      resetTest();
+    }
+  }, [appUser, tapTimestamps, toast, resetTest]);
+
+  useEffect(() => {
+    if (testState === 'testing' && timeLeft > 0) {
+      timerRef.current = setTimeout(() => {
+        setTimeLeft(timeLeft - 1);
+      }, 1000);
+    } else if (testState === 'testing' && timeLeft === 0) {
+      endTest();
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [testState, timeLeft, endTest]);
+
 
   const startTest = () => {
     setTestState('testing');
@@ -45,55 +87,15 @@ export function TappingTestClient() {
     setTapTimestamps([]);
     setAnalysis(null);
     testStartTimeRef.current = Date.now();
-
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          endTest();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   const handleTap = () => {
     if (testState !== 'testing') return;
     setTapCount(c => c + 1);
-    const timestamp = Date.now() - testStartTimeRef.current!;
-    setTapTimestamps(times => [...times, timestamp]);
-  };
-
-  const endTest = async () => {
-    setTestState('analyzing');
-    if (!appUser) {
-        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to save results.'});
-        setTestState('idle');
-        return;
+    if (testStartTimeRef.current) {
+      const timestamp = Date.now() - testStartTimeRef.current;
+      setTapTimestamps(times => [...times, timestamp]);
     }
-    try {
-        const result = await analyzeAndSaveTappingTest(appUser.id, appUser.email, tapTimestamps, TEST_DURATION);
-        if (result && 'error' in result) {
-            toast({ variant: 'destructive', title: 'Analysis Failed', description: result.error});
-            resetTest();
-        } else {
-            setAnalysis(result);
-            setTestState('results');
-        }
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Analysis Failed', description: 'An unexpected error occurred.'});
-        resetTest();
-    }
-  };
-
-  const resetTest = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setTestState('idle');
-    setTimeLeft(TEST_DURATION);
-    setTapCount(0);
-    setTapTimestamps([]);
-    setAnalysis(null);
   };
 
   const getRiskClasses = (risk: string) => {
