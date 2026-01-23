@@ -33,7 +33,7 @@ export function TappingTestClient() {
   const testStartTimeRef = useRef<number | null>(null);
 
   const resetTest = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
     setTestState('idle');
     setTimeLeft(TEST_DURATION);
     setTapCount(0);
@@ -63,21 +63,30 @@ export function TappingTestClient() {
     }
   }, [appUser, tapTimestamps, toast, resetTest]);
 
+  // Timer management effect
   useEffect(() => {
-    if (testState === 'testing' && timeLeft > 0) {
-      timerRef.current = setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-    } else if (testState === 'testing' && timeLeft === 0) {
-      endTest();
+    if (testState !== 'testing') {
+      return;
     }
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
 
     return () => {
       if (timerRef.current) {
-        clearTimeout(timerRef.current);
+        clearInterval(timerRef.current);
       }
     };
-  }, [testState, timeLeft, endTest]);
+  }, [testState]);
+
+  // Effect to end the test when time runs out
+  useEffect(() => {
+    if (timeLeft <= 0 && testState === 'testing') {
+      if (timerRef.current) clearInterval(timerRef.current);
+      endTest();
+    }
+  }, [timeLeft, testState, endTest]);
 
 
   const startTest = () => {

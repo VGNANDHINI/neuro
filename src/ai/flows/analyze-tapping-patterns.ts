@@ -21,12 +21,13 @@ export async function analyzeTappingPatterns(
   return analyzeTappingPatternsFlow(input);
 }
 
-// Helper functions translated from the Python ML model
+// Helper functions for analysis
 function calculateSpeedScore(tapsPerSecond: number): number {
-  const idealSpeed = 6.0;
-  const deviation = Math.abs(tapsPerSecond - idealSpeed);
-  // Score decreases with deviation from ideal
-  return Math.max(0, 100 - deviation * 15);
+  if (tapsPerSecond >= 6) return 100; // Excellent
+  if (tapsPerSecond > 4.5) return 80 + ((tapsPerSecond - 4.5) / 1.5) * 20; // Good
+  if (tapsPerSecond > 3) return 60 + ((tapsPerSecond - 3) / 1.5) * 20; // Moderate
+  if (tapsPerSecond > 1.5) return 30 + ((tapsPerSecond - 1.5) / 1.5) * 30; // Poor
+  return Math.max(0, (tapsPerSecond / 1.5) * 30); // Very Poor
 }
 
 function calculateConsistency(tapTimes: number[]): number {
@@ -61,31 +62,32 @@ function calculateRhythm(tapTimes: number[]): number {
     return Math.min(100, Math.max(0, (autocorr + 0.5) * 100)); // Scale to 0-100
 }
 
-
 function calculateFatigue(tapTimes: number[], duration: number): number {
-  if (tapTimes.length < 4) return 100;
-  
-  const midPoint = duration / 2;
-  const earlyTaps = tapTimes.filter(t => t < midPoint);
-  const lateTaps = tapTimes.filter(t => t >= midPoint);
+  if (tapTimes.length < 10) return 100;
 
-  if (earlyTaps.length < 2 || lateTaps.length < 2) return 100;
+  const midPoint = duration / 2;
+  const earlyTaps = tapTimes.filter(t => t <= midPoint);
+  const lateTaps = tapTimes.filter(t => t > midPoint);
+
+  if (earlyTaps.length < 5 || lateTaps.length < 5) return 100;
 
   const earlyIntervals = earlyTaps.slice(1).map((time, i) => time - earlyTaps[i]);
   const lateIntervals = lateTaps.slice(1).map((time, i) => time - lateTaps[i]);
+  
+  if(earlyIntervals.length === 0 || lateIntervals.length === 0) return 100;
 
   const meanEarlyInterval = earlyIntervals.reduce((a, b) => a + b, 0) / earlyIntervals.length;
   const meanLateInterval = lateIntervals.reduce((a, b) => a + b, 0) / lateIntervals.length;
-  
-  const earlySpeed = meanEarlyInterval > 0 ? 1 / meanEarlyInterval : 0;
-  const lateSpeed = meanLateInterval > 0 ? 1 / meanLateInterval : 0;
 
-  let speedDecline = 0;
-  if (earlySpeed > 0) {
-    speedDecline = ((earlySpeed - lateSpeed) / earlySpeed) * 100;
-  }
+  if (meanEarlyInterval === 0) return 50; // Avoid division by zero, return a middling score.
+
+  // A positive value means slowing down (interval got longer)
+  const intervalIncrease = ((meanLateInterval - meanEarlyInterval) / meanEarlyInterval) * 100;
   
-  return Math.max(0, 100 - speedDecline * 2);
+  // A score of 100 means no fatigue. A 50% slowdown (interval increase) results in a score of 50.
+  const score = 100 - intervalIncrease;
+  
+  return Math.max(0, Math.min(100, score));
 }
 
 
