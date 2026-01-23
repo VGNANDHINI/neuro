@@ -117,10 +117,10 @@ export function VoiceTestClient() {
   };
   
   const chartData = analysis ? [
-    { name: 'Pitch', score: analysis.pitch_score },
-    { name: 'Volume', score: analysis.volume_score },
-    { name: 'Clarity', score: analysis.clarity_score },
-    { name: 'Tremor', score: analysis.tremor_score, inverse: true },
+    { name: 'Pitch', score: analysis.pitchScore },
+    { name: 'Volume', score: analysis.volumeScore },
+    { name: 'Clarity', score: analysis.clarityScore },
+    { name: 'Tremor', score: analysis.tremorScore, inverse: true },
   ] : [];
 
   const getRiskClasses = (risk: string) => {
@@ -184,15 +184,15 @@ export function VoiceTestClient() {
                     <h3 className="text-2xl font-bold font-headline">Analysis Complete</h3>
                 </div>
 
-                <div className={`p-4 rounded-lg border text-center ${getRiskClasses(analysis.risk_level)}`}>
+                <div className={`p-4 rounded-lg border text-center ${getRiskClasses(analysis.riskLevel)}`}>
                     <p className="text-sm font-medium">Risk Level</p>
-                    <p className="text-2xl font-bold">{analysis.risk_level}</p>
+                    <p className="text-2xl font-bold">{analysis.riskLevel}</p>
                 </div>
 
                 <div className="text-center">
                     <p className="text-sm text-muted-foreground">Overall Score</p>
                     <p className="text-5xl font-bold font-headline text-primary">
-                        {analysis.overall_score.toFixed(1)}<span className="text-2xl text-muted-foreground">/100</span>
+                        {analysis.overallScore.toFixed(1)}<span className="text-2xl text-muted-foreground">/100</span>
                     </p>
                 </div>
 

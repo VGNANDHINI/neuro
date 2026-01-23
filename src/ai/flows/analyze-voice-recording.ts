@@ -35,12 +35,12 @@ const analyzeVoiceRecordingPrompt = ai.definePrompt({
 
   Ensure the output is in the following JSON format:
   {
-    "pitch_score": number,
-    "volume_score": number,
-    "clarity_score": number,
-    "tremor_score": number,
-    "overall_score": number,
-    "risk_level": string,
+    "pitchScore": number,
+    "volumeScore": number,
+    "clarityScore": number,
+    "tremorScore": number,
+    "overallScore": number,
+    "riskLevel": string,
     "recommendation": string
   }`,
 });
@@ -59,33 +59,33 @@ const analyzeVoiceRecordingFlow = ai.defineFlow(
     // to extract features like pitch, volume, clarity, and tremor from the audio data.
 
     // Simulate audio analysis scores (replace with actual analysis in a real implementation)
-    const pitch_score = Math.random() * 30 + 60;
-    const volume_score = Math.random() * 30 + 65;
-    const clarity_score = Math.random() * 30 + 70;
-    const tremor_score = Math.random() * 40 + 10;
-    const overall_score = (pitch_score + volume_score + clarity_score + (100 - tremor_score)) / 4;
+    const pitchScore = Math.random() * 30 + 60;
+    const volumeScore = Math.random() * 30 + 65;
+    const clarityScore = Math.random() * 30 + 70;
+    const tremorScore = Math.random() * 40 + 10;
+    const overallScore = (pitchScore + volumeScore + clarityScore + (100 - tremorScore)) / 4;
 
     // Determine risk level based on overall score
-    const risk_level = overall_score > 75 ? 'Low' : overall_score > 50 ? 'Moderate' : 'High';
+    const riskLevel = overallScore > 75 ? 'Low' : overallScore > 50 ? 'Moderate' : 'High';
 
     // Provide a recommendation based on the risk level
-    const recommendation = getRecommendation(risk_level);
+    const recommendation = getRecommendation(riskLevel);
 
     // Return the analysis results
     return {
-      pitch_score,
-      volume_score,
-      clarity_score,
-      tremor_score,
-      overall_score,
-      risk_level,
+      pitchScore,
+      volumeScore,
+      clarityScore,
+      tremorScore,
+      overallScore,
+      riskLevel,
       recommendation,
     };
   }
 );
 
-function getRecommendation(risk_level: string): string {
-  switch (risk_level) {
+function getRecommendation(riskLevel: string): string {
+  switch (riskLevel) {
     case 'Low':
       return 'No significant vocal biomarkers detected. Continue regular monitoring.';
     case 'Moderate':
