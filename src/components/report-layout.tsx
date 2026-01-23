@@ -27,14 +27,15 @@ export function ReportLayout({ user, test, scoreCards }: ReportLayoutProps) {
       spiral: 'Neurological Motor Assessment (Spiral)',
       voice: 'Vocal Biomarker Analysis (Voice)',
       tapping: 'Motor Function Assessment (Tapping)',
+      reaction: 'Cognitive-Motor Speed Assessment (Reaction)',
   }
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', color: '#000', backgroundColor: '#fff', fontSize: '11pt', lineHeight: '1.4', paddingBottom: '1in' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', color: '#000', backgroundColor: '#fff', fontSize: '11pt', lineHeight: '1.4' }}>
       {/* 1. HEADER */}
       <header style={{ textAlign: 'center', borderBottom: '2px solid #ccc', paddingBottom: '10px', marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0' }}>NEUROTIVA</h1>
-        <p style={{ fontSize: '10pt', margin: '5px 0 0 0' }}>123 Health Lane, Wellness City, 12345 | (555) 123-4567 | contact@neurotiva.health</p>
+        <h1 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0' }}>NEUROVITA</h1>
+        <p style={{ fontSize: '10pt', margin: '5px 0 0 0' }}>123 Health Lane, Wellness City, 12345 | (555) 123-4567 | contact@neurovita.health</p>
       </header>
 
       <main>
@@ -118,17 +119,17 @@ export function ReportLayout({ user, test, scoreCards }: ReportLayoutProps) {
             <div style={{ float: 'right', textAlign: 'center' }}>
                 <div style={{height: '60px'}}>{/* Space for signature */}</div>
                 <p style={{ borderTop: '1px solid #000', paddingTop: '5px', margin: '0' }}>Automated Report Generation</p>
-                <p style={{ margin: '0' }}>NeuroTiva Platform</p>
+                <p style={{ margin: '0' }}>NeuroVita Platform</p>
             </div>
              <div style={{clear: 'both'}}></div>
         </section>
       </main>
 
       {/* 10. FOOTER */}
-      <footer className="report-footer" style={{ textAlign: 'center', borderTop: '1px solid #ccc', paddingTop: '10px', fontSize: '9pt', color: '#666' }}>
+      <footer className="report-footer">
         <p style={{ margin: '0' }}>Confidential Medical Document – For authorized use only.</p>
         <p style={{ margin: '5px 0' }}>
-            Disclaimer: NeuroTiva is not a medical device and should not be used for diagnosis. This report is for informational purposes only. Always consult with a qualified healthcare professional.
+            Disclaimer: NeuroVita is not a medical device and should not be used for diagnosis. This report is for informational purposes only. Always consult with a qualified healthcare professional.
         </p>
       </footer>
     </div>
