@@ -61,7 +61,7 @@ export async function getAppUser(userId: string): Promise<AppUser | null> {
       lastLogin: tsToISO(userData.lastLogin),
     } as AppUser);
   } catch (e) {
-    console.error('getAppUser error:', e);
+    console.error('[ERROR] getAppUser:', e);
     return null;
   }
 }
@@ -74,9 +74,10 @@ export async function updateUserProfile(
 
   try {
     await updateDoc(doc(db, 'users', userId), data);
+    console.log(`[SUCCESS] User profile updated in Firestore for UID: ${userId}`);
     return safeReturn({ success: true });
   } catch (e) {
-    console.error('updateUserProfile error:', e);
+    console.error('[ERROR] updateUserProfile:', e);
     return { error: 'Failed to update profile' };
   }
 }
@@ -106,9 +107,10 @@ export async function analyzeAndSaveSpiralTest(
       createdAt: serverTimestamp(),
     });
 
+    console.log(`[SUCCESS] Spiral test result saved to Firestore. Document ID: ${docRef.id}`);
     return safeReturn({ id: docRef.id, ...parsed });
   } catch (e) {
-    console.error('Spiral error:', e);
+    console.error('[ERROR] Spiral analysis/save failed:', e);
     return { error: 'Analysis failed' };
   }
 }
@@ -141,9 +143,10 @@ export async function analyzeAndSaveVoiceTest(
       createdAt: serverTimestamp(),
     });
 
+    console.log(`[SUCCESS] Voice test result saved to Firestore. Document ID: ${docRef.id}`);
     return safeReturn({ id: docRef.id, ...parsed });
   } catch (e) {
-    console.error('Voice error:', e);
+    console.error('[ERROR] Voice analysis/save failed:', e);
     return { error: 'Analysis failed' };
   }
 }
@@ -175,9 +178,10 @@ export async function analyzeAndSaveTappingTest(
       createdAt: serverTimestamp(),
     });
 
+    console.log(`[SUCCESS] Tapping test result saved to Firestore. Document ID: ${docRef.id}`);
     return safeReturn({ id: docRef.id, ...parsed });
   } catch (e) {
-    console.error('Tapping error:', e);
+    console.error('[ERROR] Tapping analysis/save failed:', e);
     return { error: 'Analysis failed' };
   }
 }
@@ -205,9 +209,10 @@ export async function analyzeAndSaveReactionTest(
       createdAt: serverTimestamp(),
     });
 
+    console.log(`[SUCCESS] Reaction time test result saved to Firestore. Document ID: ${docRef.id}`);
     return safeReturn({ id: docRef.id, ...parsed });
   } catch (e) {
-    console.error('Reaction Time error:', e);
+    console.error('[ERROR] Reaction Time analysis/save failed:', e);
     return { error: 'Analysis failed' };
   }
 }
@@ -251,7 +256,7 @@ export async function getDashboardStats(userId: string) {
       },
     });
   } catch (e) {
-    console.error('Dashboard error:', e);
+    console.error('[ERROR] Dashboard data fetch failed:', e);
     return null;
   }
 }
@@ -278,7 +283,7 @@ export async function getAllTests(userId: string): Promise<TestResult[]> {
       })) as TestResult[]
     );
   } catch (e) {
-    console.error('getAllTests error:', e);
+    console.error('[ERROR] getAllTests failed:', e);
     return [];
   }
 }
@@ -304,7 +309,7 @@ export async function getTestDetails(
       createdAt: tsToISO(data.createdAt),
     });
   } catch (e) {
-    console.error('getTestDetails error:', e);
+    console.error('[ERROR] getTestDetails failed:', e);
     return null;
   }
 }

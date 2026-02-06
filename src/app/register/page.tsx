@@ -61,6 +61,8 @@ export default function RegisterPage() {
         gender: values.gender || null,
         createdAt: serverTimestamp(),
       });
+      
+      console.log(`[SUCCESS] User document created in Firestore for UID: ${user.uid}`);
 
       toast({
         title: 'Registration Successful',
@@ -72,6 +74,7 @@ export default function RegisterPage() {
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'This email is already registered.';
       }
+      console.error('[ERROR] Registration failed:', error);
       toast({
         variant: 'destructive',
         title: 'Registration Failed',
