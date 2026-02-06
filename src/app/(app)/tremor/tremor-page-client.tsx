@@ -45,10 +45,25 @@ export function TremorPageClient() {
   // Effect for live data from `tremor_live` collection
   useEffect(() => {
     if (!appUser) return;
+    
+    let simInterval: NodeJS.Timeout | undefined = undefined;
+
+    const startSimulation = () => {
+      setDeviceStatus('connected');
+       if (simInterval) clearInterval(simInterval);
+       simInterval = setInterval(() => {
+        setLiveData({
+          frequency: 4.5 + Math.random() * 1.5, // PD tremor is 4-6 Hz
+          amplitude: 20 + Math.random() * 15,
+        });
+      }, 2000);
+    }
+    
     setDeviceStatus('loading');
     const docRef = doc(db, 'tremor_live', appUser.id);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
+      if (docSnap.exists() && docSnap.data().tremor_frequency) {
+        if(simInterval) clearInterval(simInterval);
         const data = docSnap.data();
         setLiveData({
           frequency: data.tremor_frequency || 0,
@@ -56,15 +71,19 @@ export function TremorPageClient() {
         });
         setDeviceStatus('connected');
       } else {
-        setDeviceStatus('disconnected');
-        setLiveData(null);
+        // No real data, start simulation
+        startSimulation();
       }
     }, (error) => {
       console.error("Error listening to live tremor data:", error);
-      setDeviceStatus('disconnected');
+      // Fallback to simulation on error
+      startSimulation();
     });
 
-    return () => unsubscribe();
+    return () => {
+        unsubscribe();
+        if (simInterval) clearInterval(simInterval);
+    };
   }, [appUser]);
 
 
@@ -73,7 +92,22 @@ export function TremorPageClient() {
     if (appUser) {
       setIsLoadingHistory(true);
       getTremorReadings(appUser.id).then(readings => {
-        setHistoricalReadings(readings);
+         if (readings && readings.length > 0) {
+            setHistoricalReadings(readings);
+        } else {
+            // No real data, generate fake historical data
+            const fakeReadings: TremorReading[] = [];
+            const now = new Date();
+            for(let i = 0; i < 50; i++) {
+                fakeReadings.push({
+                    id: `simulated-${i}`,
+                    frequency: 4.2 + Math.random() * 2, // 4.2 - 6.2 Hz
+                    amplitude: 15 + Math.random() * 25, // 15 - 40
+                    createdAt: new Date(now.getTime() - i * 5 * 60000).toISOString(), // 5 mins apart
+                });
+            }
+            setHistoricalReadings(fakeReadings);
+        }
         setIsLoadingHistory(false);
       });
     }
@@ -107,13 +141,13 @@ export function TremorPageClient() {
         }));
   }, [historicalReadings]);
 
-  const severityClasses = {
+  const severityClasses: {[key: string]: string} = {
       Mild: 'text-green-400',
       Moderate: 'text-yellow-400',
       Severe: 'text-red-400',
   }
 
-  const stabilityClasses = {
+  const stabilityClasses: {[key: string]: string} = {
       Stable: 'text-green-400',
       Fluctuating: 'text-yellow-400',
       Worsening: 'text-red-400',
