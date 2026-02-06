@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import * as React from 'react';
+import { LiveTremorMonitor } from '@/components/tremor-monitor';
 
 export default function DashboardPage() {
     return (
@@ -81,26 +82,30 @@ function DashboardContent() {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <h2 className="text-xl font-bold font-headline mb-4">Start a New Test</h2>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {[
-                            { id: 'spiral', icon: Activity, title: 'Spiral Test' },
-                            { id: 'voice', icon: Mic, title: 'Voice Test' },
-                            { id: 'tapping', icon: Hand, title: 'Tapping Test' },
-                            { id: 'reaction', icon: Timer, title: 'Reaction Test' },
-                        ].map((action) => (
-                            <Link href={`/tests/${action.id}`} key={action.id} className="group">
-                                <Card className="h-full hover:border-primary transition-colors">
-                                    <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                                            <action.icon className="w-8 h-8 text-primary" />
-                                        </div>
-                                        <p className="font-semibold">{action.title}</p>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))}
+                <div className="lg:col-span-2 space-y-8">
+                    <LiveTremorMonitor />
+
+                    <div>
+                        <h2 className="text-xl font-bold font-headline mb-4">Start a New Test</h2>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {[
+                                { id: 'spiral', icon: Activity, title: 'Spiral Test' },
+                                { id: 'voice', icon: Mic, title: 'Voice Test' },
+                                { id: 'tapping', icon: Hand, title: 'Tapping Test' },
+                                { id: 'reaction', icon: Timer, title: 'Reaction Test' },
+                            ].map((action) => (
+                                <Link href={`/tests/${action.id}`} key={action.id} className="group">
+                                    <Card className="h-full hover:border-primary transition-colors">
+                                        <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+                                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                                                <action.icon className="w-8 h-8 text-primary" />
+                                            </div>
+                                            <p className="font-semibold">{action.title}</p>
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
