@@ -51,6 +51,13 @@ export type TestResult = {
   createdAt: string; // From Timestamp
 };
 
+export type TremorReading = {
+  id: string;
+  frequency: number;
+  amplitude: number;
+  createdAt: string; // from Timestamp
+}
+
 // AI Flow Schemas
 
 // Spiral Test
@@ -142,3 +149,21 @@ export const AnalyzeReactionTimeOutputSchema = z.object({
     recommendation: z.string().describe('A textual recommendation for the user based on the results.'),
 });
 export type AnalyzeReactionTimeOutput = z.infer<typeof AnalyzeReactionTimeOutputSchema>;
+
+// Tremor Analysis
+export const AnalyzeTremorDataInputSchema = z.object({
+  readings: z.array(z.object({
+    frequency: z.number(),
+    amplitude: z.number(),
+    createdAt: z.string(),
+  })).describe('An array of historical tremor readings, sorted from oldest to newest.'),
+});
+export type AnalyzeTremorDataInput = z.infer<typeof AnalyzeTremorDataInputSchema>;
+
+export const AnalyzeTremorDataOutputSchema = z.object({
+  severity: z.enum(['Mild', 'Moderate', 'Severe']).describe('The overall assessment of tremor severity based on the data.'),
+  stability: z.enum(['Stable', 'Fluctuating', 'Worsening']).describe('The trend of the tremor over the provided time period.'),
+  recommendation: z.string().describe('A concise, user-friendly recommendation based on the analysis.'),
+  keyObservation: z.string().describe('The single most important observation from the data (e.g., "Amplitude has increased by 20% this week.").')
+});
+export type AnalyzeTremorDataOutput = z.infer<typeof AnalyzeTremorDataOutputSchema>;

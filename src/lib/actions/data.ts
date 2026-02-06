@@ -16,18 +16,21 @@ import {
 } from 'firebase/firestore';
 
 import { db } from '@/lib/firebase';
-import type { AppUser, TestResult } from '@/lib/types';
+import type { AppUser, TestResult, TremorReading } from '@/lib/types';
 
 import { analyzeSpiralDrawing } from '@/ai/flows/analyze-spiral-drawing';
 import { analyzeVoiceRecording } from '@/ai/flows/analyze-voice-recording';
 import { analyzeTappingPatterns } from '@/ai/flows/analyze-tapping-patterns';
 import { analyzeReactionTime } from '@/ai/flows/analyze-reaction-time';
+import { analyzeTremor } from '@/ai/flows/analyze-tremor';
 
 import {
   AnalyzeSpiralDrawingOutputSchema,
   AnalyzeVoiceRecordingOutputSchema,
   AnalyzeTappingPatternsOutputSchema,
   AnalyzeReactionTimeOutputSchema,
+  AnalyzeTremorDataOutputSchema,
+  AnalyzeTremorDataInput,
 } from '@/lib/types';
 
 /* -------------------- HELPERS -------------------- */
@@ -368,7 +371,6 @@ export async function getProgressData(userId: string, timeframe: string) {
     const previousPeriodQuery = query(
         collection(db, 'tests'),
         where('userId', '==', userId),
-        where('createdAt', '>=', Timestamp.fromDate(previousPeriodStartDate)),
         where('createdAt', '<', Timestamp.fromDate(startDate))
     );
     const previousSnapshot = await getDocs(previousPeriodQuery);
@@ -384,4 +386,42 @@ export async function getProgressData(userId: string, timeframe: string) {
             trend: trend,
         }
     });
+}
+
+/* -------------------- TREMOR -------------------- */
+export async function getTremorReadings(userId: string): Promise<TremorReading[]> {
+  if (!userId) return [];
+  try {
+    const q = query(
+      collection(db, 'users', userId, 'tremorReadings'),
+      orderBy('createdAt', 'desc'),
+      // Limit to last 100 readings for performance
+    );
+    const snap = await getDocs(q);
+    return safeReturn(
+      snap.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        createdAt: tsToISO(d.data().createdAt),
+      })) as TremorReading[]
+    );
+  } catch (e) {
+    console.error('[ERROR] getTremorReadings failed:', e);
+    return [];
+  }
+}
+
+export async function getTremorAIAnalysis(readings: AnalyzeTremorDataInput['readings']) {
+  if (readings.length < 10) {
+    return { error: "Not enough data for a meaningful analysis. At least 10 readings are required." };
+  }
+
+  try {
+    const result = await analyzeTremor({ readings });
+    const parsed = AnalyzeTremorDataOutputSchema.parse(result);
+    return safeReturn(parsed);
+  } catch (e) {
+    console.error('[ERROR] Tremor AI analysis failed:', e);
+    return { error: 'AI analysis failed to generate a result.' };
+  }
 }

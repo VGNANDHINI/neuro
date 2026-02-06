@@ -11,13 +11,72 @@ import {
   Timer,
   ChevronRight,
   FileText,
+  Waves,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import * as React from 'react';
-import { LiveTremorMonitor } from '@/components/tremor-monitor';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function LiveTremorStatus() {
+  const { appUser } = useAuth();
+  const [status, setStatus] = useState<'listening' | 'no-data' | 'receiving'>('listening');
+
+  useEffect(() => {
+    if (!appUser) return;
+    const docRef = doc(db, 'tremor_live', appUser.id);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data().tremor_frequency) {
+        setStatus('receiving');
+      } else {
+        setStatus('no-data');
+      }
+    }, (error) => {
+      console.error("Error listening to live tremor data:", error);
+      setStatus('no-data');
+    });
+    return () => unsubscribe();
+  }, [appUser]);
+
+  const statusInfo = {
+      receiving: { text: "Live data receiving", color: "text-green-400", pulse: true },
+      listening: { text: "Connecting to device...", color: "text-yellow-400", pulse: false },
+      'no-data': { text: "Device not connected", color: "text-muted-foreground", pulse: false },
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Live Tremor Status</CardTitle>
+        <Waves className="h-5 w-5 text-blue-400" />
+      </CardHeader>
+      <CardContent>
+        {status === 'listening' ? (
+          <div className="space-y-2 pt-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <div className={`h-2 w-2 rounded-full ${status === 'receiving' ? 'bg-green-500 animate-pulse' : 'bg-muted'}`}></div>
+              <p className={statusInfo[status].color}>{statusInfo[status].text}</p>
+            </div>
+            <Button asChild variant="outline" className="w-full mt-4">
+                <Link href="/tremor">View Full Analysis <ChevronRight className="w-4 h-4 ml-1" /></Link>
+            </Button>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function DashboardPage() {
     return (
@@ -83,7 +142,7 @@ function DashboardContent() {
 
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
-                    <LiveTremorMonitor />
+                    <LiveTremorStatus />
 
                     <div>
                         <h2 className="text-xl font-bold font-headline mb-4">Start a New Test</h2>
