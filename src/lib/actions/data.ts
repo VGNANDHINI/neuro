@@ -114,7 +114,8 @@ export async function analyzeAndSaveSpiralTest(
     return safeReturn({ id: docRef.id, ...parsed });
   } catch (e) {
     console.error('[ERROR] Spiral analysis/save failed:', e);
-    return { error: 'Analysis failed' };
+    const message = e instanceof Error ? e.message : 'An unknown error occurred';
+    return { error: message };
   }
 }
 
@@ -150,7 +151,8 @@ export async function analyzeAndSaveVoiceTest(
     return safeReturn({ id: docRef.id, ...parsed });
   } catch (e) {
     console.error('[ERROR] Voice analysis/save failed:', e);
-    return { error: 'Analysis failed' };
+    const message = e instanceof Error ? e.message : 'An unknown error occurred';
+    return { error: message };
   }
 }
 
@@ -185,7 +187,8 @@ export async function analyzeAndSaveTappingTest(
     return safeReturn({ id: docRef.id, ...parsed });
   } catch (e) {
     console.error('[ERROR] Tapping analysis/save failed:', e);
-    return { error: 'Analysis failed' };
+    const message = e instanceof Error ? e.message : 'An unknown error occurred';
+    return { error: message };
   }
 }
 
@@ -216,7 +219,8 @@ export async function analyzeAndSaveReactionTest(
     return safeReturn({ id: docRef.id, ...parsed });
   } catch (e) {
     console.error('[ERROR] Reaction Time analysis/save failed:', e);
-    return { error: 'Analysis failed' };
+    const message = e instanceof Error ? e.message : 'An unknown error occurred';
+    return { error: message };
   }
 }
 
@@ -422,6 +426,7 @@ export async function getTremorAIAnalysis(readings: AnalyzeTremorDataInput['read
     return safeReturn(parsed);
   } catch (e) {
     console.error('[ERROR] Tremor AI analysis failed:', e);
-    return { error: 'AI analysis failed to generate a result.' };
+    const message = e instanceof Error ? e.message : 'AI analysis failed to generate a result.';
+    return { error: message };
   }
 }
