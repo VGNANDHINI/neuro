@@ -46,7 +46,7 @@ const recommendationPrompt = ai.definePrompt({
   If Moderate or Fluctuating, suggest continued monitoring and considering a consultation.
   If Mild and Stable, provide reassurance and recommend continued monitoring.
   
-  Provide only the key observation and the recommendation text in the specified JSON format.`,
+  Return your response as a valid JSON object with the keys "keyObservation" and "recommendation".`,
 });
 
 

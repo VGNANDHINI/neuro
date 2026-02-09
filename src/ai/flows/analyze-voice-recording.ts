@@ -76,7 +76,8 @@ const recommendationPrompt = ai.definePrompt({
     If the risk is High, strongly recommend sharing results with a healthcare provider or neurologist.
     If Moderate, suggest monitoring and considering a consultation if concerned.
     If Low, recommend continued regular monitoring.
-    Provide only the recommendation text.`,
+    
+    Return your response as a valid JSON object with a single "recommendation" key.`,
 });
 
 

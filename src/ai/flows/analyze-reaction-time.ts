@@ -52,7 +52,8 @@ const recommendationPrompt = ai.definePrompt({
   If the risk is High, strongly recommend seeing a healthcare provider.
   If Moderate, suggest monitoring and considering a consultation.
   If Low, recommend continued regular monitoring.
-  Provide only the recommendation text.`,
+  
+  Return your response as a valid JSON object with a single "recommendation" key.`,
 });
 
 
