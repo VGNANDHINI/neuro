@@ -23,32 +23,48 @@ export async function analyzeVoiceRecording(
 }
 
 
-// NEW schema for the prompt-only scores
-const VoiceAnalysisScoresSchema = z.object({
-  pitchScore: z.number().describe('The pitch score of the voice recording (0-100, higher is better).'),
-  volumeScore: z.number().describe('The volume score of the voice recording (0-100, higher is better).'),
-  clarityScore: z.number().describe('The clarity score of the voice recording (0-100, higher is better).'),
-  tremorScore: z.number().describe('The tremor score of the voice recording (0-100, higher is worse).'),
+// NEW: A more robust schema for qualitative analysis by the AI
+const VoiceAnalysisQualitativeSchema = z.object({
+  pitch: z.enum(['monopitch', 'varied', 'natural']).describe('Assessment of pitch variation. Monopitch is a key indicator.'),
+  volume: z.enum(['monoloudness', 'trailing_off', 'consistent']).describe('Assessment of volume consistency. Monoloudness or fading volume are key indicators.'),
+  clarity: z.enum(['slurred', 'imprecise', 'crisp']).describe('Assessment of speech articulation and clarity.'),
+  tremor: z.enum(['none', 'slight', 'moderate', 'significant']).describe('Assessment of the presence of vocal tremor.'),
 });
 
-// NEW prompt that only asks for scores
-const analyzeVoiceScoresPrompt = ai.definePrompt({
-  name: 'analyzeVoiceScoresPrompt',
+// NEW: A prompt that asks for classification, which is more reliable for LLMs.
+const analyzeVoiceQualitativePrompt = ai.definePrompt({
+  name: 'analyzeVoiceQualitativePrompt',
   input: {schema: AnalyzeVoiceRecordingInputSchema},
-  output: {schema: VoiceAnalysisScoresSchema},
+  output: {schema: VoiceAnalysisQualitativeSchema},
   prompt: `You are an expert in analyzing voice recordings for potential vocal biomarkers of Parkinson's disease.
 The user has recorded themselves saying "The quick brown fox jumps over the lazy dog."
-Analyze the provided voice recording of this phrase.
+Analyze the provided voice recording and classify its characteristics based on the provided schema.
 
-You will assess the following vocal characteristics on a scale of 0-100 and return them in a structured JSON format.
-- **pitchScore**: Evaluate for monopitch. A varied and natural pitch gets a high score (closer to 100). A flat, monotonous pitch gets a low score.
-- **volumeScore**: Evaluate for monoloudness. Consistent, clear volume gets a high score (closer to 100). Trailing off or inconsistent volume gets a low score.
-- **clarityScore**: Evaluate for slurred or imprecise speech. Crisp, clear articulation gets a high score (closer to 100). Mumbled or slurred words get a low score.
-- **tremorScore**: This score measures the amount of tremor, where a higher score means more tremor is detected. A score of 0 is a perfectly steady voice.
+- **pitch**: Is the pitch flat and monotonous (monopitch), or does it have natural variation?
+- **volume**: Is the volume consistent, or does it trail off or sound flat (monoloudness)?
+- **clarity**: Is the articulation crisp and clear, or is it imprecise or slurred?
+- **tremor**: Is there evidence of shakiness or tremor in the voice?
+
+Return your analysis in the structured JSON format.
 
 Voice Recording: {{media url=audioDataUri}}
 `,
 });
+
+// NEW: Function to map qualitative AI output to quantitative scores.
+function mapQualitativeToScores(qualitative: z.infer<typeof VoiceAnalysisQualitativeSchema>) {
+    const pitchMap = { monopitch: 20, varied: 70, natural: 95 };
+    const volumeMap = { monoloudness: 25, trailing_off: 50, consistent: 95 };
+    const clarityMap = { slurred: 20, imprecise: 60, crisp: 95 };
+    const tremorMap = { none: 5, slight: 30, moderate: 65, significant: 90 }; // higher is worse
+
+    return {
+        pitchScore: pitchMap[qualitative.pitch],
+        volumeScore: volumeMap[qualitative.volume],
+        clarityScore: clarityMap[qualitative.clarity],
+        tremorScore: tremorMap[qualitative.tremor],
+    };
+}
 
 const analyzeVoiceRecordingFlow = ai.defineFlow(
   {
@@ -57,11 +73,14 @@ const analyzeVoiceRecordingFlow = ai.defineFlow(
     outputSchema: AnalyzeVoiceRecordingOutputSchema,
   },
   async input => {
-    const { output: scores } = await analyzeVoiceScoresPrompt(input);
-    if (!scores) {
-      throw new Error('The AI model did not return valid scores.');
+    // UPDATED: Call the new, more reliable prompt.
+    const { output: qualitativeAnalysis } = await analyzeVoiceQualitativePrompt(input);
+    if (!qualitativeAnalysis) {
+      throw new Error('The AI model did not return a valid qualitative analysis.');
     }
     
+    // NEW: Map the qualitative analysis to scores.
+    const scores = mapQualitativeToScores(qualitativeAnalysis);
     const { pitchScore, volumeScore, clarityScore, tremorScore } = scores;
 
     // The weights are: clarityScore (40%), volumeScore (25%), pitchScore (20%), and Steadiness (100 - tremorScore) (15%).

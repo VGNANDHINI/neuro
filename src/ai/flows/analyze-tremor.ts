@@ -21,40 +21,43 @@ export async function analyzeTremor(
   return analyzeTremorFlow(input);
 }
 
+// This schema is what the AI will output. It's a classification and summarization task.
 const TremorAnalysisPartialSchema = z.object({
-  severity: z.enum(['Mild', 'Moderate', 'Severe']).describe('The overall assessment of tremor severity based on the data.'),
-  stability: z.enum(['Stable', 'Fluctuating', 'Worsening']).describe('The trend of the tremor over the provided time period.'),
+  severity: z.enum(['Mild', 'Moderate', 'Severe']).describe('The overall assessment of tremor severity based on the pre-calculated metrics and data.'),
+  stability: z.enum(['Stable', 'Fluctuating', 'Worsening']).describe('The trend of the tremor over the provided time period based on the pre-calculated metrics.'),
   keyObservation: z.string().describe('The single most important observation from the data (e.g., "Amplitude has increased by 20% this week.").')
 });
 
+// NEW: Define an augmented input schema for the prompt that includes our pre-calculated metrics.
+const AugmentedTremorInputSchema = AnalyzeTremorDataInputSchema.extend({
+    avgFrequency: z.number(),
+    avgAmplitude: z.number(),
+    amplitudeTrend: z.number().describe('The slope of the amplitude trend line. Positive means worsening.'),
+});
 
+
+// UPDATED: The prompt is now simpler for the AI. It receives pre-calculated metrics.
 const analyzeTremorPartialPrompt = ai.definePrompt({
   name: 'analyzeTremorPartialPrompt',
-  input: { schema: AnalyzeTremorDataInputSchema },
+  input: { schema: AugmentedTremorInputSchema },
   output: { schema: TremorAnalysisPartialSchema },
-  prompt: `You are a clinical data analyst specializing in Parkinson's disease biomarkers. You have received a series of tremor readings from a wearable device. Your task is to analyze this data and provide a classification and key observation.
+  prompt: `You are a clinical data analyst specializing in Parkinson's disease biomarkers. You have received a series of tremor readings and some pre-calculated metrics. Your task is to classify the data and provide a key observation.
 
-  The data contains frequency (Hz) and amplitude (arbitrary unit representing intensity).
-  - Parkinson's tremor typically occurs at a frequency of 4-6 Hz.
-  - Higher amplitude indicates a more intense tremor.
+  **Pre-calculated Metrics:**
+  - Average Frequency: {{avgFrequency}} Hz (Typical Parkinson's tremor is 4-6 Hz)
+  - Average Amplitude: {{avgAmplitude}} (Higher is more intense)
+  - Amplitude Trend Slope: {{amplitudeTrend}} (A positive slope suggests worsening over time)
 
-  Based on the provided readings, you must perform the following analysis:
+  **Your Task:**
+  Based on the pre-calculated metrics and the raw data below, perform the following analysis:
 
-  1.  **Determine Severity**: Classify the overall tremor severity as 'Mild', 'Moderate', or 'Severe'.
-      -   **Mild**: Average frequency is within or near the 4-6 Hz range, but average amplitude is consistently low (e.g., < 20).
-      -   **Moderate**: Average frequency is consistently within the 4-6 Hz range, and amplitude is noticeable and variable (e.g., 20-40).
-      -   **Severe**: Average frequency is in the 4-6 Hz range, and amplitude is consistently high (e.g., > 40).
-
-  2.  **Determine Stability**: Assess the trend of the tremor over time. Classify it as 'Stable', 'Fluctuating', or 'Worsening'.
-      -   **Stable**: Amplitude and frequency show no significant upward trend.
-      -   **Fluctuating**: Amplitude and/or frequency show significant variability without a clear trend.
-      -   **Worsening**: There is a clear upward trend in average amplitude over the time period.
-
-  3.  **Provide a Key Observation**: Write a single, concise sentence that is the most important takeaway from the data. For example: "Tremor amplitude has increased by 20% in the latter half of the readings." or "Tremor frequency remains stable within the Parkinsonian range."
+  1.  **Determine Severity**: Classify the severity as 'Mild' (avg amplitude < 20), 'Moderate' (20-40), or 'Severe' (> 40).
+  2.  **Determine Stability**: Classify the stability. If the trend slope is significantly positive, classify as 'Worsening'. If it's near zero, classify as 'Stable'. Otherwise, classify as 'Fluctuating'.
+  3.  **Provide a Key Observation**: Write a single, concise sentence that is the most important takeaway from the data.
 
   Do NOT provide a recommendation. Only output the structured JSON.
 
-  Here is the historical tremor data:
+  **Raw Historical Tremor Data:**
   {{#each readings}}
   - Time: {{createdAt}}, Frequency: {{frequency}} Hz, Amplitude: {{amplitude}}
   {{/each}}
@@ -69,7 +72,40 @@ const analyzeTremorFlow = ai.defineFlow(
     outputSchema: AnalyzeTremorDataOutputSchema,
   },
   async (input) => {
-    const { output: analysis } = await analyzeTremorPartialPrompt(input);
+    // NEW: Pre-calculation logic is moved into the flow.
+    const { readings } = input;
+    if (readings.length === 0) {
+        // Should be guarded before calling, but as a fallback.
+        throw new Error('No tremor readings provided for analysis.');
+    }
+
+    const avgFrequency = readings.reduce((sum, r) => sum + r.frequency, 0) / readings.length;
+    const avgAmplitude = readings.reduce((sum, r) => sum + r.amplitude, 0) / readings.length;
+    
+    // Simple linear regression for trend
+    let trend = 0;
+    if (readings.length > 1) {
+        const n = readings.length;
+        const x = readings.map((_, i) => i);
+        const y = readings.map(r => r.amplitude);
+        const sumX = x.reduce((a, b) => a + b, 0);
+        const sumY = y.reduce((a, b) => a + b, 0);
+        const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+        const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+        const denominator = n * sumX2 - sumX * sumX;
+        if (denominator !== 0) {
+            trend = (n * sumXY - sumX * sumY) / denominator;
+        }
+    }
+
+    // UPDATED: Call the prompt with the augmented data.
+    const { output: analysis } = await analyzeTremorPartialPrompt({
+        ...input,
+        avgFrequency,
+        avgAmplitude,
+        amplitudeTrend: trend,
+    });
+    
     if (!analysis) {
       throw new Error('The AI model did not return a valid tremor analysis.');
     }

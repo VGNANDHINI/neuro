@@ -30,7 +30,7 @@ function calculateTremor(points: Point[]): number {
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     const dt = (p2.timestamp - p1.timestamp) / 1000; // in seconds
-    if (dt > 0) {
+    if (dt > 0.001) { // Added a threshold to prevent division by very small numbers
       velocities.push({vx: dx/dt, vy: dy/dt});
     }
   }
