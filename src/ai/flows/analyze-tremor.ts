@@ -21,47 +21,32 @@ export async function analyzeTremor(
   return analyzeTremorFlow(input);
 }
 
-// This schema is what the AI will output. It's a classification and summarization task.
-const TremorAnalysisPartialSchema = z.object({
-  severity: z.enum(['Mild', 'Moderate', 'Severe']).describe('The overall assessment of tremor severity based on the pre-calculated metrics and data.'),
-  stability: z.enum(['Stable', 'Fluctuating', 'Worsening']).describe('The trend of the tremor over the provided time period based on the pre-calculated metrics.'),
-  keyObservation: z.string().describe('The single most important observation from the data (e.g., "Amplitude has increased by 20% this week.").')
+// Define an augmented input schema for the recommendation prompt
+const TremorAnalysisForRecSchema = AnalyzeTremorDataOutputSchema.extend({
+  avgFrequency: z.number(),
+  avgAmplitude: z.number(),
+  amplitudeTrend: z.number(),
 });
 
-// NEW: Define an augmented input schema for the prompt that includes our pre-calculated metrics.
-const AugmentedTremorInputSchema = AnalyzeTremorDataInputSchema.extend({
-    avgFrequency: z.number(),
-    avgAmplitude: z.number(),
-    amplitudeTrend: z.number().describe('The slope of the amplitude trend line. Positive means worsening.'),
-});
+// Prompt to generate only the key observation and recommendation
+const recommendationPrompt = ai.definePrompt({
+  name: 'generateTremorRecommendation',
+  input: { schema: TremorAnalysisForRecSchema },
+  output: { schema: z.object({ keyObservation: z.string(), recommendation: z.string() }) },
+  prompt: `You are a clinical data analyst specializing in Parkinson's disease. Based on the following tremor analysis report, provide a single key observation and a concise, user-friendly recommendation.
 
-
-// UPDATED: The prompt is now simpler for the AI. It receives pre-calculated metrics.
-const analyzeTremorPartialPrompt = ai.definePrompt({
-  name: 'analyzeTremorPartialPrompt',
-  input: { schema: AugmentedTremorInputSchema },
-  output: { schema: TremorAnalysisPartialSchema },
-  prompt: `You are a clinical data analyst specializing in Parkinson's disease biomarkers. You have received a series of tremor readings and some pre-calculated metrics. Your task is to classify the data and provide a key observation.
-
-  **Pre-calculated Metrics:**
+  **Analysis Report:**
   - Average Frequency: {{avgFrequency}} Hz (Typical Parkinson's tremor is 4-6 Hz)
   - Average Amplitude: {{avgAmplitude}} (Higher is more intense)
-  - Amplitude Trend Slope: {{amplitudeTrend}} (A positive slope suggests worsening over time)
+  - Amplitude Trend Slope: {{amplitudeTrend}} (A positive slope suggests worsening)
+  - Assessed Severity: {{severity}}
+  - Assessed Stability: {{stability}}
 
-  **Your Task:**
-  Based on the pre-calculated metrics and the raw data below, perform the following analysis:
-
-  1.  **Determine Severity**: Classify the severity as 'Mild' (avg amplitude < 20), 'Moderate' (20-40), or 'Severe' (> 40).
-  2.  **Determine Stability**: Classify the stability. If the trend slope is significantly positive, classify as 'Worsening'. If it's near zero, classify as 'Stable'. Otherwise, classify as 'Fluctuating'.
-  3.  **Provide a Key Observation**: Write a single, concise sentence that is the most important takeaway from the data.
-
-  Do NOT provide a recommendation. Only output the structured JSON.
-
-  **Raw Historical Tremor Data:**
-  {{#each readings}}
-  - Time: {{createdAt}}, Frequency: {{frequency}} Hz, Amplitude: {{amplitude}}
-  {{/each}}
-  `,
+  If the severity is Severe or stability is Worsening, strongly recommend seeing a healthcare provider.
+  If Moderate or Fluctuating, suggest continued monitoring and considering a consultation.
+  If Mild and Stable, provide reassurance and recommend continued monitoring.
+  
+  Provide only the key observation and the recommendation text in the specified JSON format.`,
 });
 
 
@@ -72,56 +57,58 @@ const analyzeTremorFlow = ai.defineFlow(
     outputSchema: AnalyzeTremorDataOutputSchema,
   },
   async (input) => {
-    // NEW: Pre-calculation logic is moved into the flow.
     const { readings } = input;
-    if (readings.length === 0) {
-        // Should be guarded before calling, but as a fallback.
-        throw new Error('No tremor readings provided for analysis.');
+    if (readings.length < 10) {
+        throw new Error('Not enough tremor readings provided for analysis. At least 10 are required.');
     }
 
+    // Perform all calculations locally
     const avgFrequency = readings.reduce((sum, r) => sum + r.frequency, 0) / readings.length;
     const avgAmplitude = readings.reduce((sum, r) => sum + r.amplitude, 0) / readings.length;
     
-    // Simple linear regression for trend
     let trend = 0;
     if (readings.length > 1) {
         const n = readings.length;
-        const x = readings.map((_, i) => i);
-        const y = readings.map(r => r.amplitude);
-        const sumX = x.reduce((a, b) => a + b, 0);
-        const sumY = y.reduce((a, b) => a + b, 0);
+        const x = readings.map((_, i) => i); const y = readings.map(r => r.amplitude);
+        const sumX = x.reduce((a, b) => a + b, 0); const sumY = y.reduce((a, b) => a + b, 0);
         const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
         const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
         const denominator = n * sumX2 - sumX * sumX;
-        if (denominator !== 0) {
-            trend = (n * sumXY - sumX * sumY) / denominator;
-        }
+        if (denominator !== 0) { trend = (n * sumXY - sumX * sumY) / denominator; }
     }
 
-    // UPDATED: Call the prompt with the augmented data.
-    const { output: analysis } = await analyzeTremorPartialPrompt({
-        ...input,
+    // Determine Severity and Stability locally
+    let severity: 'Mild' | 'Moderate' | 'Severe';
+    if (avgAmplitude > 40) severity = 'Severe';
+    else if (avgAmplitude > 20) severity = 'Moderate';
+    else severity = 'Mild';
+
+    let stability: 'Stable' | 'Fluctuating' | 'Worsening';
+    if (trend > 0.5) stability = 'Worsening'; // Trend slope is significantly positive
+    else if (Math.abs(trend) < 0.1) stability = 'Stable'; // Trend is near zero
+    else stability = 'Fluctuating';
+
+
+    const analysisResult = {
+        severity,
+        stability,
         avgFrequency,
         avgAmplitude,
         amplitudeTrend: trend,
-    });
+    };
     
-    if (!analysis) {
-      throw new Error('The AI model did not return a valid tremor analysis.');
-    }
-
-    let recommendation: string;
-    if (analysis.severity === 'Severe' || analysis.stability === 'Worsening') {
-        recommendation = 'Your tremor patterns show signs of worsening or high severity. We strongly recommend sharing these results with your healthcare provider for a closer look.';
-    } else if (analysis.severity === 'Moderate' || analysis.stability === 'Fluctuating') {
-        recommendation = 'Your tremor patterns are showing some fluctuation or moderate severity. Continue regular monitoring and consider discussing these patterns with your healthcare provider at your next appointment.';
-    } else {
-        recommendation = 'Your tremor patterns appear to be stable and mild. This is a positive sign. Continue with your regular monitoring schedule.';
+    // Call AI only for the recommendation and key observation
+    const { output } = await recommendationPrompt(analysisResult);
+    
+    if (!output) {
+      throw new Error('The AI model did not return a valid recommendation.');
     }
 
     return {
-        ...analysis,
-        recommendation,
+        severity: analysisResult.severity,
+        stability: analysisResult.stability,
+        keyObservation: output.keyObservation,
+        recommendation: output.recommendation,
     };
   }
 );

@@ -22,19 +22,38 @@ export async function analyzeReactionTime(
 }
 
 
-// Local calculation functions based on the logic from the original prompt
+// Local calculation functions
 function calculateReactionTimeScore(avgTime: number): number {
-    // A score from 0-100 where 100 is excellent (e.g., <280ms) and 0 is very poor (e.g., >800ms).
     const score = 100 - ((avgTime - 280) / (800 - 280)) * 100;
     return Math.max(0, Math.min(100, score));
 }
 
 function calculateConsistencyScore(stdDev: number): number {
-    // High variability and standard deviation should result in a lower score.
-    // A standard deviation less than 60ms is good, while over 250ms is poor.
     const score = 100 - ((stdDev - 60) / (250 - 60)) * 100;
     return Math.max(0, Math.min(100, score));
 }
+
+
+// Schema for the data passed to the recommendation prompt
+const ReactionAnalysisForRecSchema = AnalyzeReactionTimeOutputSchema.omit({ recommendation: true });
+
+// Prompt to generate only the recommendation
+const recommendationPrompt = ai.definePrompt({
+  name: 'generateReactionTimeRecommendation',
+  input: { schema: ReactionAnalysisForRecSchema },
+  output: { schema: z.object({ recommendation: z.string() }) },
+  prompt: `You are a clinical data analyst. Based on the following reaction time test results, provide a concise, user-friendly recommendation.
+  - Average Time: {{averageTime}} ms
+  - Reaction Time Score: {{reactionTimeScore}}/100
+  - Consistency Score: {{reactionConsistencyScore}}/100
+  - Overall Score: {{overallScore}}/100
+  - Risk Level: {{riskLevel}}
+
+  If the risk is High, strongly recommend seeing a healthcare provider.
+  If Moderate, suggest monitoring and considering a consultation.
+  If Low, recommend continued regular monitoring.
+  Provide only the recommendation text.`,
+});
 
 
 const analyzeReactionTimeFlow = ai.defineFlow(
@@ -63,31 +82,34 @@ const analyzeReactionTimeFlow = ai.defineFlow(
     const reactionTimeScore = calculateReactionTimeScore(averageTime);
     const reactionConsistencyScore = calculateConsistencyScore(stdDev);
 
-    // overallScore: A weighted combination of the time and consistency scores (60% time, 40% consistency).
     const overallScore = reactionTimeScore * 0.6 + reactionConsistencyScore * 0.4;
     
     let riskLevel: 'Low' | 'Moderate' | 'High';
-    let recommendation: string;
-
-    // riskLevel: Scores below 50 indicate 'High' risk, scores between 50 and 70 indicate 'Moderate' risk, and scores above 70 indicate 'Low' risk.
     if (overallScore < 50) {
         riskLevel = 'High';
-        recommendation = 'Significant slowness or inconsistency in reaction time was detected. This may indicate a change in cognitive-motor processing speed. We strongly recommend sharing these results with your healthcare provider.';
     } else if (overallScore < 70) {
         riskLevel = 'Moderate';
-        recommendation = 'Some inconsistency or slowness in reaction time was observed. Factors like age, fatigue, or distraction can affect results. Consider re-testing and monitoring your scores over time.';
     } else {
         riskLevel = 'Low';
-        recommendation = 'Your reaction time and consistency are within a normal range. This indicates good cognitive-motor performance. Continue with regular monitoring.';
     }
 
-    return {
+    const analysisResult = {
         averageTime: parseFloat(averageTime.toFixed(1)),
         reactionTimeScore: parseFloat(reactionTimeScore.toFixed(1)),
         reactionConsistencyScore: parseFloat(reactionConsistencyScore.toFixed(1)),
         overallScore: parseFloat(overallScore.toFixed(1)),
         riskLevel,
-        recommendation,
+    };
+    
+    // Generate recommendation using AI
+    const { output } = await recommendationPrompt(analysisResult);
+    if (!output) {
+      throw new Error("AI failed to generate a recommendation.");
+    }
+
+    return {
+        ...analysisResult,
+        recommendation: output.recommendation,
     };
   }
 );
