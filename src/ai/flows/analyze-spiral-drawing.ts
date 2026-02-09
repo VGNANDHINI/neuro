@@ -43,8 +43,13 @@ function calculateTremor(points: Point[]): number {
       const v2 = velocities[i];
       accelerations.push(Math.sqrt((v2.vx - v1.vx)**2 + (v2.vy-v1.vy)**2));
   }
+
+  if (accelerations.length === 0) return 0;
   
-  const tremor = Math.min(100, (Math.sqrt(accelerations.reduce((a,b) => a+b*b, 0) / accelerations.length)) / 20);
+  const rmsAcceleration = Math.sqrt(accelerations.reduce((a,b) => a+b*b, 0) / accelerations.length);
+  if (isNaN(rmsAcceleration)) return 0;
+  
+  const tremor = Math.min(100, rmsAcceleration / 20);
   return tremor;
 }
 
@@ -64,6 +69,8 @@ function calculateSmoothness(points: Point[]): number {
     jerks.push(Math.sqrt(a.x**2 + a.y**2));
   }
   
+  if (jerks.length === 0) return 100;
+
   const avgJerk = jerks.reduce((sum, j) => sum + j, 0) / jerks.length;
   const smoothness = Math.max(0, 100 - avgJerk * 5); // Scale factor
   return smoothness;
@@ -86,6 +93,7 @@ function calculateSpeedScore(points: Point[]): number {
     if (speeds.length === 0) return 0;
 
     const meanSpeed = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+    if (meanSpeed === 0) return 0;
     const stdDev = Math.sqrt(speeds.map(x => Math.pow(x - meanSpeed, 2)).reduce((a, b) => a + b, 0) / speeds.length);
     
     const cv = stdDev / meanSpeed; // Coefficient of Variation
@@ -111,11 +119,14 @@ function calculateConsistency(points: Point[]): number {
     const sumX2 = indices.reduce((s, x) => s + x*x, 0);
     const n = indices.length;
 
-    const slope = (n * sumXY - sumX * sumY) / (n* sumX2 - sumX * sumX);
+    const denominator = (n * sumX2 - sumX * sumX);
+    if (denominator === 0) return 0;
+    const slope = (n * sumXY - sumX * sumY) / denominator;
     
     // R-squared - simplified
     const yMean = sumY / n;
     const ssTot = distances.reduce((s, y) => s + (y-yMean)**2, 0);
+    if (ssTot === 0) return 100;
     const ssRes = distances.reduce((s, y, i) => s + (y - (slope * i))**2, 0);
 
     const rSquared = 1 - (ssRes / ssTot);

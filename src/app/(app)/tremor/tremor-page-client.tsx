@@ -117,17 +117,27 @@ export function TremorPageClient() {
     setIsAnalyzing(true);
     setAnalysisError(null);
     setAiAnalysis(null);
-    
-    // Simulate AI analysis to provide a fake but realistic result
-    setTimeout(() => {
-        setAiAnalysis({
-            severity: 'Moderate',
-            stability: 'Fluctuating',
-            keyObservation: 'Tremor amplitude shows moderate but consistent variability.',
-            recommendation: 'Your tremor patterns are showing some fluctuation. Continue regular monitoring and consider discussing these patterns with your healthcare provider at your next appointment.'
-        });
+
+    if (historicalReadings.length < 10) {
+        setAnalysisError("Not enough data for a meaningful analysis. At least 10 readings are required.");
         setIsAnalyzing(false);
-    }, 1500);
+        return;
+    }
+    
+    try {
+        const result = await getTremorAIAnalysis(historicalReadings);
+        if (result && 'error' in result) {
+            setAnalysisError(result.error);
+        } else if (result) {
+            setAiAnalysis(result as AnalyzeTremorDataOutput);
+        } else {
+            setAnalysisError('The AI analysis returned an empty result.');
+        }
+    } catch (e: any) {
+        setAnalysisError(e.message || 'An unexpected error occurred during analysis.');
+    } finally {
+        setIsAnalyzing(false);
+    }
   };
   
   const chartData = useMemo(() => {
@@ -210,7 +220,7 @@ export function TremorPageClient() {
         </CardHeader>
         <CardContent>
            {isAnalyzing && (
-            <div className="flex items-center gap-4 text-center p-8">
+            <div className="flex items-center justify-center gap-4 text-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <div>
                     <p className="font-semibold">AI is analyzing your data...</p>
@@ -243,8 +253,8 @@ export function TremorPageClient() {
                 </div>
             </div>
            )}
-           {!isAnalyzing && (
-            <Button onClick={handleRunAnalysis} disabled={historicalReadings.length < 10}>
+           {!isAnalyzing && !aiAnalysis && (
+            <Button onClick={handleRunAnalysis} disabled={isLoadingHistory || historicalReadings.length < 10}>
                 <Activity className="mr-2 h-4 w-4" /> Run AI Analysis
             </Button>
            )}
